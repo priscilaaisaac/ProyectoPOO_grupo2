@@ -56,9 +56,8 @@ La estructura de directorios del proyecto se organiza de la siguiente manera:
 ---
 
 ## 🙎‍♀️🙎‍♂️ Autores:
-    - Apellido y Nombre del primer integrante
-    - Apellido y Nombre del segundo integrante
-
+    - Isaac Priscila Rocio
+    - Andrade Eric Daniel
 ## 📅 Cuatrimestre de cursado:
     1er/2do cuatrimestre del 20xx
 
