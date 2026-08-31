@@ -1,0 +1,2 @@
+-e "./libs/biblioteca_ayed_fiuner"
+python-dotenv==1.2.2
