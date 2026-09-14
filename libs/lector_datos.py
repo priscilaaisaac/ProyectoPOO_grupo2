@@ -14,7 +14,8 @@ class LectorArchivo(LectorDatos):
     def leer(self, origen, nombre_tabla: str = None) -> pd.DataFrame:
         nombre = origen.name.lower()
         if nombre.endswith(('.csv', '.txt')):
-            return pd.read_csv(origen)
+            # Soporta coma, punto y coma, tabs/espacios y guiones
+            return pd.read_csv(origen, sep=r'[,;\t\-]', engine='python')
         elif nombre.endswith(('.xlsx', '.xltx', '.xltm')):
             return pd.read_excel(origen)
         else:
@@ -26,7 +27,6 @@ class LectorSQL(LectorDatos):
         if not nombre_tabla:
             raise ValueError("Se requiere el nombre de la tabla para bases de datos SQL.")
         
-        # SQLAlchemy gestiona la conexión con motores como SQLite, PostgreSQL, MySQL
         engine = create_engine(origen)
         query = f"SELECT * FROM {nombre_tabla}"
         return pd.read_sql(query, con=engine)

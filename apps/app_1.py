@@ -11,9 +11,16 @@ import pandas as pd
 from libs.lector_datos import FactoryLectorDatos
 from libs.validador import ValidadorEsquema
 
-# Estilos para atenuar etiquetas de origen en widgets de selección
+# Configuración de estilos: elimina enlaces ancla (URL) en títulos y atenúa textos secundarios
 st.markdown("""
 <style>
+    /* Ocultar enlaces de ancla (íconos de URL/cadena) en todos los encabezados */
+    [data-testid="stHeaderActionElements"],
+    .stApp a[href^="#"],
+    h1 a, h2 a, h3 a, h4 a, h5 a, h6 a {
+        display: none !important;
+    }
+    
     div[data-baseweb="select"] span {
         font-weight: 500;
     }
@@ -77,7 +84,7 @@ if st.session_state.origen_datos == "CSV":
             nombre_archivo = archivo.name.lower()
             try:
                 if nombre_archivo.endswith(('.csv', '.txt')):
-                    temp_df = pd.read_csv(archivo, nrows=5)
+                    temp_df = pd.read_csv(archivo, sep=r'[,;\t\-]', engine='python', nrows=5)
                 elif nombre_archivo.endswith(('.xlsx', '.xltx', '.xltm')):
                     temp_df = pd.read_excel(archivo, nrows=5)
                 
@@ -137,7 +144,6 @@ if columnas_usuario:
             return opcion
         archivo_orig = st.session_state.get("origen_por_columna", {}).get(opcion, "")
         if archivo_orig:
-            # Separador visual discreto con brackets que dan jerarquía secundaria al origen
             return f"{opcion}   ·  〔 {archivo_orig} 〕"
         return opcion
 
