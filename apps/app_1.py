@@ -97,57 +97,57 @@ if st.session_state.origen_datos == "CSV":
 
     if archivos_subidos:
         archivos_validos = True
-    
-    for archivo in archivos_subidos:
-        nombre_archivo = archivo.name.lower()
         
-        # 1. Asignar el origen de datos según la extensión del archivo actual
-        if nombre_archivo.endswith('.csv'):
-            st.session_state.origen_datos = "CSV"
-        elif nombre_archivo.endswith('.txt'):
-            st.session_state.origen_datos = "TXT"
-        elif nombre_archivo.endswith(('.xlsx', '.xltx', '.xltm')):
-            st.session_state.origen_datos = "EXCEL"
+        # --- 1. VALIDACIÓN PREVIA DE ARCHIVOS ---
+        for archivo in archivos_subidos:
+            nombre_archivo = archivo.name.lower()
             
-        # 2. Validar que el archivo tenga contenido usando tu lógica original
-        try:
-            if st.session_state.origen_datos in ["CSV", "TXT"]:
-                temp_df = pd.read_csv(
-                    archivo,
-                    sep=r'[,;\t-]',
-                    engine='python',
-                    nrows=5
-                )
-            elif st.session_state.origen_datos == "EXCEL":
-                temp_df = pd.read_excel(
-                    archivo,
-                    nrows=5
-                )
+            # Usamos una variable local para no romper el estado general del menú (st.session_state)
+            if nombre_archivo.endswith('.csv'):
+                tipo_archivo = "CSV"
+            elif nombre_archivo.endswith('.txt'):
+                tipo_archivo = "TXT"
+            elif nombre_archivo.endswith(('.xlsx', '.xltx', '.xltm')):
+                tipo_archivo = "EXCEL"
+            else:
+                tipo_archivo = None
+                
+            try:
+                if tipo_archivo in ["CSV", "TXT"]:
+                    temp_df = pd.read_csv(archivo, sep=r'[,;\t-]', engine='python', nrows=5)
+                elif tipo_archivo == "EXCEL":
+                    temp_df = pd.read_excel(archivo, nrows=5)
 
-            if temp_df.empty or len(temp_df.columns) < 1:
-                st.error(
-                    f"El archivo '{archivo.name}' no cumple con la condición mínima "
-                    "(requiere al menos 1 columna y encabezado)."
-                )
+                if temp_df.empty or len(temp_df.columns) < 1:
+                    st.error(f"El archivo '{archivo.name}' no cumple con la condición mínima (requiere al menos 1 columna y encabezado).")
+                    archivos_validos = False
+                    break
+                    
+            except Exception as e:
+                st.error(f"Error al intentar leer el archivo {archivo.name}: {e}")
                 archivos_validos = False
                 break
-                
-        except Exception as e:
-            st.error(f"Error al intentar leer el archivo {archivo.name}: {e}")
-            archivos_validos = False
-            break
 
+        # --- 2. PROCESAMIENTO Y CONCATENACIÓN ---
+        # El botón debe estar FUERA del bucle for para que valide la lista entera
         if archivos_validos and st.button("Continuar"):
-
             try:
-                lector = FactoryLectorDatos.obtener_lector("CSV")
-
                 dfs_procesados = []
                 columnas_separadas = []
                 origen_map = {}
 
                 for archivo in archivos_subidos:
                     archivo.seek(0)
+                    nombre_archivo = archivo.name.lower()
+                    
+                    # Solicitamos a la fábrica el lector correcto según el tipo de archivo actual
+                    if nombre_archivo.endswith('.csv'):
+                        lector = FactoryLectorDatos.obtener_lector("CSV")
+                    elif nombre_archivo.endswith('.txt'):
+                        lector = FactoryLectorDatos.obtener_lector("TXT")
+                    elif nombre_archivo.endswith(('.xlsx', '.xltx', '.xltm')):
+                        lector = FactoryLectorDatos.obtener_lector("EXCEL")
+                        
                     df_comp = lector.leer(origen=archivo)
 
                     # Se renombra cada columna añadiendo el sufijo del archivo para mantenerlas independientes
@@ -173,12 +173,8 @@ if st.session_state.origen_datos == "CSV":
                 st.session_state.columnas_disponibles = columnas_separadas
                 st.session_state.origen_por_columna = origen_map
 
-                st.success(
-                    f"Se consolidaron {len(dfs_procesados)} archivo(s) exitosamente.")
-
             except Exception as e:
-                st.error(
-                    f"Error al procesar y unificar los archivos: {e}")
+                st.error(f"Error al procesar y unificar los archivos: {e}")
 
 elif st.session_state.origen_datos == "SQL":
 
@@ -389,6 +385,17 @@ if st.session_state.get("df_crudo") is not None and "mapeo_columnas" in st.sessi
 
     st.markdown('<h3 style="font-size: 1.4rem;">Tratamiento de Anomalías y Valores Nulos</h3>', unsafe_allow_html=True)
     
+    st.info(
+        "**💡 ¿Qué significa imputar con la mediana?**\n\n"
+        "La **mediana** es el valor central exacto de tus datos cuando los ordenás de menor a mayor. "
+        "A diferencia del promedio clásico, la mediana **no se distorsiona por valores extremos (outliers)**. "
+    )
+    # ----------------------------------
+    
+    # Identificación de atributos numéricos según el contrato
+    columnas_numericas = ["capacidad_maxima_avion", "capacidad_usada_avion"]
+    if mapeo.get("precio") and mapeo.get("precio") != "(No asignar)":
+        columnas_numericas.append("precio")
     # Identificación de atributos numéricos según el contrato
     columnas_numericas = ["capacidad_maxima_avion", "capacidad_usada_avion"]
     if mapeo.get("precio") and mapeo.get("precio") != "(No asignar)":
@@ -407,7 +414,7 @@ if st.session_state.get("df_crudo") is not None and "mapeo_columnas" in st.sessi
         opcion = st.selectbox(
             f"Tratamiento para '{attr}' (Columna: {col_real}):",
             options=[
-                "Dejar tal cual está",
+                "No modificar (mantener nulos)",
                 "Imputar con la mediana global",
                 "Imputar con la mediana por grupos (país de origen y país de llegada)"
             ],
