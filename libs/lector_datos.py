@@ -10,16 +10,26 @@ class LectorDatos(ABC):
         pass
 
 # 2. Clase Concreta para Archivos (CSV, TXT, Excel)
-class LectorArchivo(LectorDatos):
+class LectorCSV(LectorDatos):
     def leer(self, origen, nombre_tabla: str = None) -> pd.DataFrame:
         nombre = origen.name.lower()
-        if nombre.endswith(('.csv', '.txt')):
-            # Soporta coma, punto y coma, tabs/espacios y guiones (Regex corregido)
-            return pd.read_csv(origen, sep=r'[,;\t-]', engine='python')
-        elif nombre.endswith(('.xlsx', '.xltx', '.xltm')):
-            return pd.read_excel(origen)
-        else:
-            raise ValueError(f"Formato no soportado: {nombre}")
+        if not nombre.endswith('.csv'):
+            raise ValueError(f"El archivo provisto no tiene extensión CSV: {nombre}")
+        return pd.read_csv(origen, sep=r'[,;\t-]', engine='python')
+
+class LectorTXT(LectorDatos):
+    def leer(self, origen, nombre_tabla: str = None) -> pd.DataFrame:
+        nombre = origen.name.lower()
+        if not nombre.endswith('.txt'):
+            raise ValueError(f"El archivo provisto no tiene extensión TXT: {nombre}")
+        return pd.read_csv(origen, sep=r'[,;\t-]', engine='python')
+
+class LectorExcel(LectorDatos):
+    def leer(self, origen, nombre_tabla: str = None) -> pd.DataFrame:
+        nombre = origen.name.lower()
+        if not nombre.endswith(('.xlsx', '.xltx', '.xltm')):
+            raise ValueError(f"El archivo no es un formato de Excel válido: {nombre}")
+        return pd.read_excel(origen)
 
 # 3. Clase Concreta para Bases de Datos SQL
 class LectorSQL(LectorDatos):
@@ -37,11 +47,16 @@ class FactoryLectorDatos:
     def obtener_lector(tipo_origen: str) -> LectorDatos:
         """
         Retorna la instancia adecuada según el tipo de origen.
-        tipo_origen debe ser 'CSV' o 'SQL'.
+        tipo_origen debe ser 'CSV', 'TXT', 'EXCEL' o 'SQL'.
         """
-        if tipo_origen == "CSV":
-            return LectorArchivo()
-        elif tipo_origen == "SQL":
+        tipo = tipo_origen.upper()
+        if tipo == "CSV":
+            return LectorCSV()
+        elif tipo == "TXT":
+            return LectorTXT()
+        elif tipo == "EXCEL":
+            return LectorExcel()
+        elif tipo == "SQL":
             return LectorSQL()
         else:
             raise ValueError(f"Tipo de origen desconocido: {tipo_origen}")

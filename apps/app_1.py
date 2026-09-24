@@ -88,36 +88,46 @@ if st.session_state.origen_datos == "CSV":
         accept_multiple_files=True)
 
     if archivos_subidos:
-
         archivos_validos = True
+    
+    for archivo in archivos_subidos:
+        nombre_archivo = archivo.name.lower()
+        
+        # 1. Asignar el origen de datos según la extensión del archivo actual
+        if nombre_archivo.endswith('.csv'):
+            st.session_state.origen_datos = "CSV"
+        elif nombre_archivo.endswith('.txt'):
+            st.session_state.origen_datos = "TXT"
+        elif nombre_archivo.endswith(('.xlsx', '.xltx', '.xltm')):
+            st.session_state.origen_datos = "EXCEL"
+            
+        # 2. Validar que el archivo tenga contenido usando tu lógica original
+        try:
+            if st.session_state.origen_datos in ["CSV", "TXT"]:
+                temp_df = pd.read_csv(
+                    archivo,
+                    sep=r'[,;\t-]',
+                    engine='python',
+                    nrows=5
+                )
+            elif st.session_state.origen_datos == "EXCEL":
+                temp_df = pd.read_excel(
+                    archivo,
+                    nrows=5
+                )
 
-        for archivo in archivos_subidos:
-            nombre_archivo = archivo.name.lower()
-            try:
-                if nombre_archivo.endswith(('.csv', '.txt')):
-                    temp_df = pd.read_csv(
-                        archivo,
-                        sep=r'[,;\t-]',
-                        engine='python',
-                        nrows=5)
-
-                elif nombre_archivo.endswith(('.xlsx', '.xltx', '.xltm')):
-                    temp_df = pd.read_excel(
-                        archivo,
-                        nrows=5)
-
-                if temp_df.empty or len(temp_df.columns) < 1:
-                    st.error(
-                        f"El archivo '{archivo.name}' no cumple con la condición mínima "
-                        "(requiere al menos 1 columna y encabezado).")
-                    archivos_validos = False
-                    break
-
-            except Exception as e:
+            if temp_df.empty or len(temp_df.columns) < 1:
                 st.error(
-                    f"Error al leer la estructura de '{archivo.name}': {e}")
+                    f"El archivo '{archivo.name}' no cumple con la condición mínima "
+                    "(requiere al menos 1 columna y encabezado)."
+                )
                 archivos_validos = False
                 break
+                
+        except Exception as e:
+            st.error(f"Error al intentar leer el archivo {archivo.name}: {e}")
+            archivos_validos = False
+            break
 
         if archivos_validos and st.button("Continuar"):
 
