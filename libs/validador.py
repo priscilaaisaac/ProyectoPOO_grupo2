@@ -85,6 +85,14 @@ class ValidadorEsquema:
         self._validar_columna_enteros_tolerante(self.df[c_max], "capacidad_maxima_avion")
         self._validar_columna_enteros_tolerante(self.df[c_usada], "capacidad_usada_avion")
 
+        # Convertimos a formato numérico (ignorando temporalmente los textos de 'error' convirtiéndolos en nulos)
+        s_max = pd.to_numeric(self.df[c_max], errors='coerce')
+        s_usada = pd.to_numeric(self.df[c_usada], errors='coerce')
+        
+        # Comparamos fila por fila si la usada supera a la máxima
+        if (s_usada > s_max).any():
+            raise ValueError("Inconsistencia detectada: Hay registros donde la 'capacidad usada' es mayor a la 'capacidad máxima'.")
+
         c_precio = self.mapeo.get("precio")
         if not c_precio or c_precio == "(No asignar)":
             raise ValueError("El atributo 'precio' es obligatorio.")
