@@ -18,6 +18,7 @@ from libs.pipeline_limpieza import (
     ImputadorMedianaPorGrupo
 )
 from libs.fabrica_vuelos import FabricaVuelos
+from libs.gestor_usuarios import GestorUsuarios
 
 st.markdown("""
 <style>
@@ -33,6 +34,58 @@ st.markdown("""
         background-color: rgba(150, 150, 150, 0.15) !important;}
 </style>
 """, unsafe_allow_html=True)
+
+# Inicialización del gestor de usuarios
+gestor_usr = GestorUsuarios()
+
+if "usuario_activo" not in st.session_state:
+    st.session_state.usuario_activo = None
+
+# Sidebar: Control de Acceso
+st.sidebar.title("Módulo de Usuario")
+
+if st.session_state.usuario_activo is None:
+    pestaña_login, pestaña_registro = st.sidebar.tabs(["Iniciar Sesión", "Registrarse"])
+
+    with pestaña_login:
+        usuario_in = st.text_input("Usuario:", key="login_usr")
+        clave_in = st.text_input("Contraseña:", type="password", key="login_pass")
+        if st.button("Ingresar", use_container_width=True):
+            user = gestor_usr.autenticar(usuario_in, clave_in)
+            if user:
+                st.session_state.usuario_activo = user
+                st.sidebar.success(f"Bienvenido/a, {user.username}")
+                st.rerun()
+            else:
+                st.sidebar.error("Usuario o contraseña incorrectos.")
+
+    with pestaña_registro:
+        nuevo_usr = st.text_input("Nuevo Usuario:", key="reg_usr")
+        nueva_clave = st.text_input("Nueva Contraseña:", type="password", key="reg_pass")
+        if st.button("Crear Cuenta", use_container_width=True):
+            try:
+                user = gestor_usr.registrar_usuario(nuevo_usr, nueva_clave)
+                st.session_state.usuario_activo = user
+                st.sidebar.success(f"Cuenta '{nuevo_usr}' creada exitosamente.")
+                st.rerun()
+            except ValueError as e:
+                st.sidebar.error(str(e))
+else:
+    usuario_actual = st.session_state.usuario_activo
+    st.sidebar.markdown(f"**Usuario:** `{usuario_actual.username}`")
+
+    if st.sidebar.button("Cerrar Sesión", use_container_width=True):
+        st.session_state.usuario_activo = None
+        st.rerun()
+
+    # Opción para recuperar sesión anterior
+    datos_sesion = usuario_actual.sesion.to_dict()
+    if datos_sesion.get("ultima_actualizacion"):
+        st.sidebar.info(f"Última sesión: {datos_sesion['ultima_actualizacion']}")
+        with st.sidebar.expander("Historial de Configuración Guardada"):
+            st.json(datos_sesion.get("configuracion_imputacion", {}))
+            st.write("**Comandos ejecutados:**")
+            st.write(datos_sesion.get("historial_comandos", []))
 
 ATRIBUTOS_REQUERIDOS = [
     "aeropuerto_destino", "aeropuerto_origen", 
@@ -449,14 +502,35 @@ if st.session_state.get("df_crudo") is not None and "mapeo_columnas" in st.sessi
         # Ejecución secuencial de los pasos apilados
         df_limpio = pipeline.ejecutar(df_norm)
         st.session_state.df_limpio = df_limpio
-        st.success("¡Pipeline ejecutado exitosamente! Base de datos saneada y lista para instanciar objetos Vuelo.")
 
         # Dentro del bloque "if st.button('Ejecutar Pipeline de Limpieza'):"
         df_limpio = pipeline.ejecutar(df_norm)
         st.session_state.df_limpio = df_limpio
 
-# Instanciación de objetos de dominio en memoria
+        # Instanciación de objetos de dominio en memoria
         lista_vuelos = FabricaVuelos.instanciar_desde_dataframe(df_limpio, st.session_state.mapeo_columnas)
         st.session_state.lista_vuelos = lista_vuelos
 
         st.success(f"¡Pipeline ejecutado! Se instanciaron con éxito {len(lista_vuelos)} objetos Vuelo en memoria.")
+
+        # Guardado del estado y comando en la sesión del usuario activo (REQ-04 y REQ-05)
+        if st.session_state.usuario_activo:
+            usuario = st.session_state.usuario_activo
+            
+            # Actualizamos estado de la sesión
+            usuario.sesion.actualizar(
+                origen=st.session_state.origen_datos,
+                excluidas=st.session_state.get("variables_excluidas", []),
+                mapeo=mapeo,
+                imputacion=configuracion_imputacion
+            )
+            # Auditoría bajo patrón Command
+            usuario.sesion.registrar_comando(
+                accion="EjecucionPipelineLimpieza",
+                parametros={
+                    "total_filas": len(df_limpio),
+                    "imputaciones": configuracion_imputacion
+                }
+            )
+            gestor_usr.guardar_usuario(usuario)
+            st.sidebar.success("Sesión y cambios guardados en su perfil.")

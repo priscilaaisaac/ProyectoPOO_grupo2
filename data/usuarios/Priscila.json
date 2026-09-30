@@ -1,0 +1,43 @@
+{
+    "username": "Priscila",
+    "password_hash": "scrypt:32768:8:1$Cu3Pa9brBUWCC0SQ$96ba81b3cbc7d719d973921dbdf93727eb622c8a09145b0bb93f3a8e99c4dcf112263395b53a84f54b7d0d340d537b492844451404101a379a9a1c93dbc30a43",
+    "sesion": {
+        "ultima_actualizacion": "2026-09-30 13:00:54",
+        "origen_datos": "CSV",
+        "variables_excluidas": [],
+        "mapeo_columnas": {
+            "aeropuerto_destino": "aeropuerto_destino__(Normal.xlsx)",
+            "aeropuerto_origen": "aeropuerto_origen__(Normal.xlsx)",
+            "fechayhora_origen": "fechayhora_origen__(Normal.xlsx)",
+            "fechayhora_destino": "fechayhora_destino__(Normal.xlsx)",
+            "fechayhora_origen_estipulado": "fechayhora_origen_estipulado__(Normal.xlsx)",
+            "fechayhora_destino_estipulado": "fechayhora_destino_estipulado__(Normal.xlsx)",
+            "estado": "estado__(Normal.xlsx)",
+            "capacidad_maxima_avion": "capacidad_maxima_avion__(Normal.xlsx)",
+            "capacidad_usada_avion": "capacidad_usada_avion__(Normal.xlsx)",
+            "precio": "precio__(Normal.xlsx)",
+            "origen": "origen__(Normal.xlsx)",
+            "destino": "destino__(Normal.xlsx)",
+            "id_vuelo": "id_vuelo__(Normal.xlsx)"
+        },
+        "configuracion_imputacion": {
+            "capacidad_maxima_avion": "No modificar (mantener nulos)",
+            "capacidad_usada_avion": "No modificar (mantener nulos)",
+            "precio": "No modificar (mantener nulos)"
+        },
+        "historial_comandos": [
+            {
+                "timestamp": "2026-09-30 13:00:54",
+                "accion": "EjecucionPipelineLimpieza",
+                "parametros": {
+                    "total_filas": 50,
+                    "imputaciones": {
+                        "capacidad_maxima_avion": "No modificar (mantener nulos)",
+                        "capacidad_usada_avion": "No modificar (mantener nulos)",
+                        "precio": "No modificar (mantener nulos)"
+                    }
+                }
+            }
+        ]
+    }
+}
