@@ -71,18 +71,43 @@ def modulo_limpieza_y_dominio(gestor_usr):
         if st.session_state.usuario_activo:
             usuario = st.session_state.usuario_activo
             
-            # --- NUEVA LÓGICA: Extraer el nombre de los archivos procesados ---
-            archivos_origen = list(set([info["archivo"] for info in st.session_state.get("origen_por_columna", {}).values()]))
-            nombres_archivos = " + ".join(archivos_origen) if archivos_origen else "Archivo_Desconocido"
+            # --- NUEVA LÓGICA: Extraer el nombre de los archivos procesados y auto-guardar ---
+            nombre_base = st.session_state.get("nombre_archivo_actual", "dataset_vuelos.csv")
+            if nombre_base.endswith(".csv"):
+                nombre_base = nombre_base[:-4]
+            nombre_limpio = f"{nombre_base}_limpio.csv"
+            
+            import os
+            directorio_guardado = os.path.join("data", "archivos_guardados")
+            os.makedirs(directorio_guardado, exist_ok=True)
+            ruta_limpio = os.path.join(directorio_guardado, nombre_limpio)
+            df_limpio.to_csv(ruta_limpio, index=False)
             
             usuario.sesion.actualizar(origen=st.session_state.origen_datos, excluidas=st.session_state.get("variables_excluidas", []), mapeo=mapeo, imputacion=configuracion_imputacion)
             usuario.sesion.registrar_comando(
                 accion="EjecucionPipelineLimpieza", 
                 parametros={
-                    "archivos": nombres_archivos, # Guardamos el nombre en el historial
+                    "archivos": nombre_limpio, # Guardamos el nombre real + _limpio en el historial
                     "total_filas": len(df_limpio), 
                     "imputaciones": configuracion_imputacion
                 }
             )
             gestor_usr.guardar_usuario(usuario)
             st.sidebar.success("Sesión y cambios guardados en su perfil.")
+
+    if st.session_state.get("df_limpio") is not None:
+        st.markdown('<h3 style="font-size: 1.4rem;">Descargar Resultados</h3>', unsafe_allow_html=True)
+        csv = st.session_state.df_limpio.to_csv(index=False).encode('utf-8')
+        
+        nombre_base = st.session_state.get("nombre_archivo_actual", "dataset_vuelos.csv")
+        if nombre_base.endswith(".csv"):
+            nombre_base = nombre_base[:-4]
+        nombre_limpio_descarga = f"{nombre_base}_limpio.csv"
+
+        st.download_button(
+            label="⬇️ Descargar Dataset Limpio (CSV)",
+            data=csv,
+            file_name=nombre_limpio_descarga,
+            mime="text/csv",
+            use_container_width=True
+        )

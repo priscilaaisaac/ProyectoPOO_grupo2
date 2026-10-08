@@ -2,22 +2,31 @@ import pandas as pd
 from abc import ABC, abstractmethod
 from sqlalchemy import create_engine
 
-def detectar_separador(origen):
+import csv
+
+def detectar_formato(origen):
+    """Detecta el separador y si el archivo tiene encabezado usando csv.Sniffer."""
     if hasattr(origen, 'read'):
-        chunk = origen.read(2048)
+        chunk = origen.read(8192)
         if isinstance(chunk, bytes):
             chunk = chunk.decode('utf-8', errors='ignore')
         origen.seek(0)
     else:
         with open(origen, 'r', encoding='utf-8', errors='ignore') as f:
-            chunk = f.read(2048)
+            chunk = f.read(8192)
             
-    separadores = [',', ';', '\t', '-']
-    conteo = {sep: chunk.count(sep) for sep in separadores}
-    mejor_sep = max(conteo, key=conteo.get)
-    if conteo[mejor_sep] == 0:
-        return ','
-    return mejor_sep
+    try:
+        sniffer = csv.Sniffer()
+        # csv.Sniffer requiere un string de delimitadores posibles
+        dialect = sniffer.sniff(chunk, delimiters=',;\t|- ')
+        tiene_encabezado = sniffer.has_header(chunk)
+        return dialect.delimiter, tiene_encabezado
+    except Exception:
+        # Fallback si Sniffer falla
+        separadores = [',', ';', '\t', '|', '-', ' ']
+        conteo = {sep: chunk.count(sep) for sep in separadores}
+        mejor_sep = max(conteo, key=conteo.get) if sum(conteo.values()) > 0 else ','
+        return mejor_sep, True
 
 
 # 1. Interfaz Base
@@ -33,16 +42,24 @@ class LectorCSV(LectorDatos):
         nombre = origen.name.lower()
         if not nombre.endswith('.csv'):
             raise ValueError(f"El archivo provisto no tiene extensión CSV: {nombre}")
-        sep = kwargs.get('sep') or detectar_separador(origen)
-        return pd.read_csv(origen, sep=sep, engine='python')
+        
+        sep, has_header = detectar_formato(origen)
+        sep = kwargs.get('sep', sep)
+        header_row = 0 if has_header else None
+        
+        return pd.read_csv(origen, sep=sep, header=header_row, engine='python', on_bad_lines='skip', skip_blank_lines=True)
 
 class LectorTXT(LectorDatos):
     def leer(self, origen, nombre_tabla: str = None, **kwargs) -> pd.DataFrame:
         nombre = origen.name.lower()
         if not nombre.endswith('.txt'):
             raise ValueError(f"El archivo provisto no tiene extensión TXT: {nombre}")
-        sep = kwargs.get('sep') or detectar_separador(origen)
-        return pd.read_csv(origen, sep=sep, engine='python')
+        
+        sep, has_header = detectar_formato(origen)
+        sep = kwargs.get('sep', sep)
+        header_row = 0 if has_header else None
+        
+        return pd.read_csv(origen, sep=sep, header=header_row, engine='python', on_bad_lines='skip', skip_blank_lines=True)
 
 class LectorExcel(LectorDatos):
     def leer(self, origen, nombre_tabla: str = None, **kwargs) -> pd.DataFrame:

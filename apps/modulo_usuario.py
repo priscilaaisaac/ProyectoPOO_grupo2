@@ -57,8 +57,82 @@ def vista_perfil_pantalla_completa(gestor_usr):
             st.session_state.mostrar_perfil = False
             st.rerun()
 
+    st.write("En esta sección podés visualizar tus archivos cargados (crudos) y los archivos que has creado (unificados)")
     st.divider()
 
+    import os
+    import pandas as pd
+    directorio_guardado = os.path.join("data", "archivos_guardados")
+    if not os.path.exists(directorio_guardado):
+        st.info("Aún no hay archivos guardados físicos en esta sección.")
+        archivos = []
+    else:
+        archivos = os.listdir(directorio_guardado)
+        
+    if archivos:
+        crudos = [f for f in archivos if f.startswith("raw_")]
+        creados = [f for f in archivos if not f.startswith("raw_")]
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            st.markdown("### Archivos Cargados (Crudos)")
+            if not crudos:
+                st.write("No hay archivos cargados.")
+            for f in crudos:
+                ruta = os.path.join(directorio_guardado, f)
+                if st.button(f"📥 {f}", key=f"btn_{f}"):
+                    try:
+                        st.session_state.nombre_archivo_actual = f
+                        df_cargado = pd.read_csv(ruta)
+                        st.session_state.df_crudo = df_cargado
+                        from apps.modulo_validacion import ATRIBUTOS_REQUERIDOS, ATRIBUTOS_OPCIONALES
+                        nuevo_mapeo = {}
+                        for attr in ATRIBUTOS_REQUERIDOS + ATRIBUTOS_OPCIONALES:
+                            if attr in df_cargado.columns:
+                                nuevo_mapeo[attr] = attr
+                            else:
+                                nuevo_mapeo[attr] = "(No asignar)"
+                        st.session_state.mapeo_columnas = nuevo_mapeo
+                        st.session_state.contrato_validado = True
+                        from modules.calidad import EstandarizadorDatos
+                        st.session_state.df_estandarizado = EstandarizadorDatos.normalizar(df_cargado)
+                        st.session_state.mostrar_perfil = False
+                        st.session_state.modo_limpieza_directa = True
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"Error al cargar el archivo: {e}")
+
+        with col2:
+            st.markdown("### Archivos Creados (Unificados)")
+            if not creados:
+                st.write("No hay archivos unificados.")
+            for f in creados:
+                ruta = os.path.join(directorio_guardado, f)
+                if st.button(f"📄 {f}", key=f"btn_{f}"):
+                    try:
+                        st.session_state.nombre_archivo_actual = f
+                        df_cargado = pd.read_csv(ruta)
+                        st.session_state.df_crudo = df_cargado
+                        from apps.modulo_validacion import ATRIBUTOS_REQUERIDOS, ATRIBUTOS_OPCIONALES
+                        nuevo_mapeo = {}
+                        for attr in ATRIBUTOS_REQUERIDOS + ATRIBUTOS_OPCIONALES:
+                            if attr in df_cargado.columns:
+                                nuevo_mapeo[attr] = attr
+                            else:
+                                nuevo_mapeo[attr] = "(No asignar)"
+                        st.session_state.mapeo_columnas = nuevo_mapeo
+                        st.session_state.contrato_validado = True
+                        from modules.calidad import EstandarizadorDatos
+                        st.session_state.df_estandarizado = EstandarizadorDatos.normalizar(df_cargado)
+                        st.session_state.mostrar_perfil = False
+                        st.session_state.modo_limpieza_directa = True
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"Error al cargar el archivo: {e}")
+
+    st.divider()
+    st.markdown('<h2 style="font-size: 1.8rem;">Historial de Limpiezas Realizadas</h2>', unsafe_allow_html=True)
+    
     # Accedemos directamente a la lista a través del diccionario 'data' de la clase SesionAnalisis
     comandos_lista = usuario_actual.sesion.data.get("historial_comandos", [])
     

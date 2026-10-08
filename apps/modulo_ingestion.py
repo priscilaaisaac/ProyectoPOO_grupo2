@@ -35,9 +35,10 @@ def modulo_ingestion():
                     
                 try:
                     if tipo_archivo in ["CSV", "TXT"]:
-                        from modules.lector_datos import detectar_separador
-                        sep_det = detectar_separador(archivo)
-                        temp_df = pd.read_csv(archivo, sep=sep_det, engine='python', nrows=5)
+                        from modules.lector_datos import detectar_formato
+                        sep_det, has_header = detectar_formato(archivo)
+                        header_row = 0 if has_header else None
+                        temp_df = pd.read_csv(archivo, sep=sep_det, header=header_row, engine='python', on_bad_lines='skip', skip_blank_lines=True, nrows=5)
                     else:
                         temp_df = pd.read_excel(archivo, nrows=5)
                         
@@ -50,7 +51,7 @@ def modulo_ingestion():
                     archivos_validos = False
                     break
 
-            if archivos_validos and st.button("Continuar"):
+            if archivos_validos:
                 try:
                     dfs_procesados, columnas_separadas, origen_map = [], [], {}
                     for archivo in archivos_subidos:
@@ -72,9 +73,16 @@ def modulo_ingestion():
                     st.session_state.df_crudo_completo = pd.concat(dfs_procesados, axis=0, ignore_index=True)
                     st.session_state.columnas_disponibles = columnas_separadas
                     st.session_state.origen_por_columna = origen_map
-                    st.success(f"Se consolidaron {len(dfs_procesados)} archivo(s) exitosamente.")
+                    st.session_state.archivos_crudos_temporales = archivos_subidos
+                    st.success(f"Se consolidaron {len(dfs_procesados)} archivo(s) exitosamente. Ya puede mapear los atributos abajo.")
                 except Exception as e:
                     st.error(f"Error al procesar: {e}")
+        else:
+            # Limpiar el estado si se eliminan todos los archivos
+            st.session_state.df_crudo_completo = None
+            st.session_state.columnas_disponibles = []
+            st.session_state.origen_por_columna = {}
+            st.session_state.archivos_crudos_temporales = []
 
     elif st.session_state.origen_datos == "SQL":
         st.markdown('<h3 style="font-size: 1.4rem;">Conexión a Base de Datos</h3>', unsafe_allow_html=True)

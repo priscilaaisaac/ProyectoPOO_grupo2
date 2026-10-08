@@ -24,13 +24,10 @@ def modulo_validacion():
         info = st.session_state.get("origen_por_columna", {}).get(opcion)
         return f"{info['nombre_original']}   · 〔 {info['archivo']} 〕" if info else opcion
 
-    st.markdown('<h3 style="font-size: 1.4rem;">Seleccione variables a excluir</h3>', unsafe_allow_html=True)
-    st.multiselect("Variables a excluir:", options=columnas_usuario, format_func=format_opcion_con_archivo, key="variables_excluidas")
-
     st.markdown('<h3 style="font-size: 1.4rem;">Seleccione variables a analizar</h3>', unsafe_allow_html=True)
     mapeo_columnas = {}
-    excluidas = st.session_state.get("variables_excluidas", [])
-    columnas_disponibles_mapeo = [c for c in columnas_usuario if c not in excluidas]
+    excluidas = []
+    columnas_disponibles_mapeo = columnas_usuario
     
     seleccionados_global = []
     for prefijo, lista_atributos in [("req_", ATRIBUTOS_REQUERIDOS), ("opc_", ATRIBUTOS_OPCIONALES)]:
@@ -56,6 +53,9 @@ def modulo_validacion():
             opc_filtradas = ["(No asignar)"] + [col for col in columnas_disponibles_mapeo if col not in seleccionados_global or col == valor_actual]
             mapeo_columnas[atributo] = st.selectbox(f"Asignar a '{atributo}':", options=opc_filtradas, format_func=format_opcion_con_archivo, key=key)
 
+    st.markdown('<h3 style="font-size: 1.4rem;">Guardar y Continuar</h3>', unsafe_allow_html=True)
+    nombre_archivo_nuevo = st.text_input("Nombre para el nuevo archivo unificado (sin extensión):", "dataset_vuelos_unificado")
+
     if st.button("Validar Contrato y Continuar"):
         try:
             df_completo = st.session_state.df_crudo_completo.copy()
@@ -64,12 +64,39 @@ def modulo_validacion():
 
             validador = ValidadorEsquema(df=df_completo, mapeo=mapeo_columnas, requeridos=ATRIBUTOS_REQUERIDOS)
             resultado_validacion = validador.validar()
+            
+            import os
+            import json
+            directorio_guardado = os.path.join("data", "archivos_guardados")
+            os.makedirs(directorio_guardado, exist_ok=True)
+            
+            # Guardar archivos crudos originales
+            if "archivos_crudos_temporales" in st.session_state:
+                for archivo in st.session_state.archivos_crudos_temporales:
+                    ruta_crudo = os.path.join(directorio_guardado, f"raw_{archivo.name}")
+                    with open(ruta_crudo, "wb") as f:
+                        f.write(archivo.getvalue())
+                        
+            # Renombrar las columnas al mapeo canónico
+            mapeo_inverso = {v: k for k, v in mapeo_columnas.items() if v != "(No asignar)"}
+            df_unificado = df_completo.rename(columns=mapeo_inverso)
+            
+            # Limpiar columnas que no fueron mapeadas y no nos interesan?
+            # El usuario dijo "a partir de las columnas de los archivos que se deseó cargar"
+            # Dejaremos todas las que no fueron excluidas.
+            
+            ruta_unificado = os.path.join(directorio_guardado, f"{nombre_archivo_nuevo}.csv")
+            df_unificado.to_csv(ruta_unificado, index=False)
+            st.session_state.nombre_archivo_actual = f"{nombre_archivo_nuevo}.csv"
 
-            st.session_state.df_crudo = df_completo
-            st.session_state.mapeo_columnas = mapeo_columnas
+            st.session_state.df_crudo = df_unificado
+            # El nuevo mapeo es 1:1 para las columnas canónicas
+            nuevo_mapeo = {k: k for k in mapeo_columnas.keys() if mapeo_columnas[k] != "(No asignar)"}
+            st.session_state.mapeo_columnas = nuevo_mapeo
             st.session_state.contrato_validado = True
-            st.session_state.df_estandarizado = EstandarizadorDatos.normalizar(df_completo)
-            st.success(resultado_validacion)
+            st.session_state.df_estandarizado = EstandarizadorDatos.normalizar(df_unificado)
+            
+            st.success(f"{resultado_validacion} Archivos guardados exitosamente. Puedes verlos en la sección 'Ver mi Perfil y Archivos Guardados'.")
         except ValueError as ve:
             st.session_state.contrato_validado = False
             st.error(f"Error de Contrato: {ve}")

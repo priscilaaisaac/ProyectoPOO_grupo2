@@ -139,6 +139,32 @@ class ReglaParidadFormatos(ReglaValidacion):
                         f"deben compartir el mismo tipo de dato general."
                     )
                 
+class ReglaCronologiaFechas(ReglaValidacion):
+    """Verifica que la fecha y hora de llegada sea siempre posterior a la de salida."""
+
+    def ejecutar(self, df: pd.DataFrame, mapeo: dict, requeridos: list):
+        self._comparar_fechas(df, mapeo, "fechayhora_origen", "fechayhora_destino")
+        self._comparar_fechas(df, mapeo, "fechayhora_origen_estipulado", "fechayhora_destino_estipulado")
+
+    @staticmethod
+    def _comparar_fechas(df: pd.DataFrame, mapeo: dict, campo_salida: str, campo_llegada: str):
+        col_salida = mapeo.get(campo_salida)
+        col_llegada = mapeo.get(campo_llegada)
+        
+        if col_salida and col_salida != "(No asignar)" and col_llegada and col_llegada != "(No asignar)":
+            if col_salida in df.columns and col_llegada in df.columns:
+                # Convertir a datetime omitiendo errores temporales
+                s_salida = pd.to_datetime(df[col_salida], errors="coerce")
+                s_llegada = pd.to_datetime(df[col_llegada], errors="coerce")
+                
+                # Validar filas donde ambas fechas son válidas (no nulas)
+                mask_validas = s_salida.notna() & s_llegada.notna()
+                if (s_salida[mask_validas] >= s_llegada[mask_validas]).any():
+                    raise ValueError(
+                        f"Inconsistencia detectada: Existen registros donde '{campo_salida}' "
+                        f"es igual o posterior a '{campo_llegada}'."
+                    )
+                
 class ValidadorEsquema:
     """Orquestador que agrupa y ejecuta el conjunto de reglas de validación."""
 
@@ -150,6 +176,7 @@ class ValidadorEsquema:
             ReglaCamposRequeridos(),
             ReglaCapacidadesYPrecio(),
             ReglaParidadFormatos(),
+            ReglaCronologiaFechas(),
         ]
 
     def validar(self) -> str:
