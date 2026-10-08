@@ -35,36 +35,69 @@ def modulo_usuario(gestor_usr):
 
         if st.sidebar.button("Cerrar Sesión", use_container_width=True):
             st.session_state.usuario_activo = None
+            st.session_state.mostrar_perfil = False
             st.rerun()
 
         st.sidebar.divider()
         
         if st.sidebar.button("📂 Ver mi Perfil y Archivos Guardados", use_container_width=True):
-            st.session_state.mostrar_perfil = not st.session_state.get("mostrar_perfil", False)
+            st.session_state.mostrar_perfil = True
+            st.rerun()
 
-        if st.session_state.get("mostrar_perfil", False):
-            with st.sidebar.container(border=True):
-                st.markdown("### 🗂️ Procedimientos Aplicados")
-                datos_sesion = usuario_actual.sesion.to_dict()
+def vista_perfil_pantalla_completa(gestor_usr):
+    """Renderiza el historial y permite eliminar registros de operaciones pasadas."""
+    usuario_actual = st.session_state.usuario_activo
+    
+    col_titulo, col_boton = st.columns([0.8, 0.2])
+    with col_titulo:
+        st.markdown('<h1 style="font-size: 2.25rem;">🗂️ Mis Archivos Guardados</h1>', unsafe_allow_html=True)
+    with col_boton:
+        st.write("") # Espaciador
+        if st.button("⬅️ Volver", use_container_width=True):
+            st.session_state.mostrar_perfil = False
+            st.rerun()
+
+    st.divider()
+
+    # Accedemos directamente a la lista a través del diccionario 'data' de la clase SesionAnalisis
+    comandos_lista = usuario_actual.sesion.data.get("historial_comandos", [])
+    
+    if comandos_lista:
+        # Recorremos la lista al revés para mostrar lo más nuevo arriba
+        for i in reversed(range(len(comandos_lista))):
+            cmd = comandos_lista[i]
+            
+            # Como vimos en tu clase, cmd ya es un diccionario directo
+            parametros = cmd.get('parametros', {})
+            archivos = parametros.get('archivos', 'Archivo desconocido')
+            numero_operacion = i + 1
+            
+            with st.expander(f"📁 {archivos}  |  (Operación #{numero_operacion})", expanded=True):
+                col_info, col_eliminar = st.columns([0.8, 0.2])
                 
-                if datos_sesion.get("ultima_actualizacion"):
-                    st.caption(f"Última actualización: {datos_sesion['ultima_actualizacion']}")
-                    comandos = datos_sesion.get("historial_comandos", [])
+                with col_info:
+                    st.write(f"**Filas procesadas:** {parametros.get('total_filas', 'N/A')}")
                     
-                    if comandos:
-                        for i, cmd in enumerate(comandos):
-                            st.markdown(f"**Operación #{i+1}**")
-                            parametros = cmd.get('parametros', {})
-                            st.write(f"Filas procesadas: {parametros.get('total_filas', 'N/A')}")
-                            
-                            if 'imputaciones' in parametros and parametros['imputaciones']:
-                                st.markdown("**Limpieza aplicada:**")
-                                for columna, procedimiento in parametros['imputaciones'].items():
-                                    st.markdown(f"- **{columna}:** {procedimiento}")
-                            else:
-                                st.write("*No se aplicaron imputaciones numéricas.*")
-                            st.divider()
+                    imputaciones = parametros.get('imputaciones', {})
+                    if imputaciones:
+                        st.markdown("**Limpieza aplicada:**")
+                        for columna, procedimiento in imputaciones.items():
+                            st.markdown(f"- **{columna}:** {procedimiento}")
                     else:
-                        st.write("Aún no tienes procedimientos en tu historial.")
-                else:
-                    st.info("No tienes un historial registrado en esta cuenta.")
+                        st.write("*No se aplicaron imputaciones numéricas.*")
+                        
+                with col_eliminar:
+                    st.write("") # Espaciador para centrar verticalmente
+                    # La clave incluye el índice 'i' original para no borrar el equivocado
+                    if st.button("🗑️ Eliminar", key=f"del_{i}", use_container_width=True):
+                        
+                        # ¡La magia ocurre aquí! Borramos directamente del diccionario
+                        usuario_actual.sesion.data["historial_comandos"].pop(i)
+                        
+                        # Guardamos en el JSON / Base de datos
+                        gestor_usr.guardar_usuario(usuario_actual)
+                        
+                        st.success("Archivo eliminado exitosamente.")
+                        st.rerun()
+    else:
+        st.info("Aún no tienes procedimientos en tu historial.")

@@ -7,10 +7,10 @@ raiz_proyecto = Path(__file__).resolve().parent.parent
 if str(raiz_proyecto) not in sys.path:
     sys.path.append(str(raiz_proyecto))
 
-from libs.gestor_usuarios import GestorUsuarios
+from modules.gestor_usuarios import GestorUsuarios
 
 # Importaciones modulares locales
-from apps.modulo_usuario import modulo_usuario
+from apps.modulo_usuario import modulo_usuario, vista_perfil_pantalla_completa
 from apps.modulo_ingestion import modulo_ingestion
 from apps.modulo_validacion import modulo_validacion
 from apps.modulo_limpieza import modulo_limpieza_y_dominio
@@ -23,7 +23,8 @@ def inicializar_estado():
         "df_crudo_completo": None, 
         "columnas_disponibles": [],
         "origen_por_columna": {}, 
-        "contrato_validado": False
+        "contrato_validado": False,
+        "mostrar_perfil": False # Aseguramos que la vista inicie en falso
     }
     for clave, valor in claves_iniciales.items():
         if clave not in st.session_state:
@@ -47,10 +48,17 @@ def main():
     
     gestor_usr = GestorUsuarios()
     
+    # La barra lateral se renderiza siempre
     modulo_usuario(gestor_usr)
-    modulo_ingestion()
-    modulo_validacion()
-    modulo_limpieza_y_dominio(gestor_usr)
+    
+    # Lógica de navegación principal (Router)
+    if st.session_state.get("mostrar_perfil", False) and st.session_state.usuario_activo:
+        # Ahora pasamos el gestor de usuarios a la vista del perfil
+        vista_perfil_pantalla_completa(gestor_usr)
+    else:
+        modulo_ingestion()
+        modulo_validacion()
+        modulo_limpieza_y_dominio(gestor_usr)
 
 if __name__ == "__main__":
     main()

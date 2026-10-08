@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from libs.lector_datos import FactoryLectorDatos
+from modules.lector_datos import FactoryLectorDatos
 
 def modulo_ingestion():
     st.markdown('<h1 style="font-size: 2.25rem;">Carga de datos</h1>', unsafe_allow_html=True)

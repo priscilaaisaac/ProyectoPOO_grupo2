@@ -1,6 +1,6 @@
 import streamlit as st
-from libs.validador import ValidadorEsquema
-from libs.calidad import EstandarizadorDatos
+from modules.validador import ValidadorEsquema
+from modules.calidad import EstandarizadorDatos
 
 ATRIBUTOS_REQUERIDOS = [
     "aeropuerto_destino", "aeropuerto_origen", "fechayhora_origen", 

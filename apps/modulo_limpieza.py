@@ -1,10 +1,10 @@
 import streamlit as st
-from libs.calidad import ReporteCalidad, AnalizadorDuplicados
-from libs.pipeline_limpieza import (
+from modules.calidad import ReporteCalidad, AnalizadorDuplicados
+from modules.pipeline_limpieza import (
     PipelineLimpieza, SaneadorCategoricos, 
     ImputadorMedianaGlobal, ImputadorMedianaPorGrupo
 )
-from libs.fabrica_vuelos import FabricaVuelos
+from modules.fabrica_vuelos import FabricaVuelos
 
 def modulo_limpieza_y_dominio(gestor_usr):
     if st.session_state.get("df_crudo") is None or not st.session_state.get("contrato_validado"):
@@ -70,7 +70,19 @@ def modulo_limpieza_y_dominio(gestor_usr):
 
         if st.session_state.usuario_activo:
             usuario = st.session_state.usuario_activo
+            
+            # --- NUEVA LÓGICA: Extraer el nombre de los archivos procesados ---
+            archivos_origen = list(set([info["archivo"] for info in st.session_state.get("origen_por_columna", {}).values()]))
+            nombres_archivos = " + ".join(archivos_origen) if archivos_origen else "Archivo_Desconocido"
+            
             usuario.sesion.actualizar(origen=st.session_state.origen_datos, excluidas=st.session_state.get("variables_excluidas", []), mapeo=mapeo, imputacion=configuracion_imputacion)
-            usuario.sesion.registrar_comando(accion="EjecucionPipelineLimpieza", parametros={"total_filas": len(df_limpio), "imputaciones": configuracion_imputacion})
+            usuario.sesion.registrar_comando(
+                accion="EjecucionPipelineLimpieza", 
+                parametros={
+                    "archivos": nombres_archivos, # Guardamos el nombre en el historial
+                    "total_filas": len(df_limpio), 
+                    "imputaciones": configuracion_imputacion
+                }
+            )
             gestor_usr.guardar_usuario(usuario)
             st.sidebar.success("Sesión y cambios guardados en su perfil.")
