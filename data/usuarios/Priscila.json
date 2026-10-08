@@ -25,19 +25,6 @@
             "capacidad_usada_avion": "No modificar (mantener nulos)",
             "precio": "No modificar (mantener nulos)"
         },
-        "historial_comandos": [
-            {
-                "timestamp": "2026-09-30 13:00:54",
-                "accion": "EjecucionPipelineLimpieza",
-                "parametros": {
-                    "total_filas": 50,
-                    "imputaciones": {
-                        "capacidad_maxima_avion": "No modificar (mantener nulos)",
-                        "capacidad_usada_avion": "No modificar (mantener nulos)",
-                        "precio": "No modificar (mantener nulos)"
-                    }
-                }
-            }
-        ]
+        "historial_comandos": []
     }
 }
