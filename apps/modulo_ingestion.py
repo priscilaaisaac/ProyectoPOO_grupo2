@@ -34,7 +34,13 @@ def modulo_ingestion():
                 tipo_archivo = "CSV" if nombre_archivo.endswith('.csv') else "TXT" if nombre_archivo.endswith('.txt') else "EXCEL" if nombre_archivo.endswith(('.xlsx', '.xltx', '.xltm')) else None
                     
                 try:
-                    temp_df = pd.read_csv(archivo, sep=r'[,;\t-]', engine='python', nrows=5) if tipo_archivo in ["CSV", "TXT"] else pd.read_excel(archivo, nrows=5)
+                    if tipo_archivo in ["CSV", "TXT"]:
+                        from modules.lector_datos import detectar_separador
+                        sep_det = detectar_separador(archivo)
+                        temp_df = pd.read_csv(archivo, sep=sep_det, engine='python', nrows=5)
+                    else:
+                        temp_df = pd.read_excel(archivo, nrows=5)
+                        
                     if temp_df.empty or len(temp_df.columns) < 1:
                         st.error(f"El archivo '{archivo.name}' no cumple con la condición mínima.")
                         archivos_validos = False
