@@ -39,20 +39,19 @@ def aplicar_estilos():
         h1 a, h2 a, h3 a, h4 a, h5 a, h6 a { display: none !important; }
         div[data-baseweb="select"] span { font-weight: 500; }
         div[data-baseweb="tag"] { background-color: rgba(150, 150, 150, 0.15) !important; }
-        /* Traducir límite de 200MB y tipos de archivo ocultando TODO el contenido original */
-        [data-testid="stFileUploaderDropzoneInstructions"] > * {
-            display: none !important;
-        }
-        [data-testid="stFileUploaderDropzoneInstructions"] {
+        
+        /* Ocultar el texto en inglés forzando el tamaño de fuente a cero */
+        div[data-testid="stFileUploaderDropzoneInstructions"] > div {
             font-size: 0px !important;
-            color: transparent !important;
         }
-        [data-testid="stFileUploaderDropzoneInstructions"]::after {
-            content: "200MB por archivo • CSV, TXT, XLSX, XLTX, XLTM";
+        
+        /* Insertar y dar formato únicamente al texto en español */
+        div[data-testid="stFileUploaderDropzoneInstructions"] > div::after {
+            content: "200MB por archivo - CSV, TXT, XLSX, XLTX, XLTM";
             font-size: 14px !important;
-            color: rgba(250, 250, 250, 0.7) !important; 
-            display: block !important;
-            visibility: visible !important;
+            color: inherit;
+            opacity: 0.7;
+            display: block;
         }
     </style>
     """, unsafe_allow_html=True)
