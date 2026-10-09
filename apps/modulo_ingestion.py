@@ -1,4 +1,12 @@
-import streamlit as st
+try:
+    import streamlit as st  # type: ignore[import-not-found]
+except ModuleNotFoundError:
+    class _StreamlitUnavailable:
+        def __getattr__(self, name):
+            raise ModuleNotFoundError("streamlit no está instalado. Instálalo con: pip install streamlit")
+
+    st = _StreamlitUnavailable()
+
 import pandas as pd
 from modules.lector_datos import FactoryLectorDatos
 
