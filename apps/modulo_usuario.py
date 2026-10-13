@@ -42,7 +42,14 @@ def modulo_usuario(gestor_usr):
         
         if st.sidebar.button("📂 Ver mi Perfil y Archivos Guardados", use_container_width=True):
             st.session_state.mostrar_perfil = True
+            st.session_state.mostrar_analisis = False
             st.rerun()
+
+        if st.session_state.get("lista_vuelos") or st.session_state.get("df_limpio") is not None:
+            if st.sidebar.button("📈 Análisis Estadístico y Precios", use_container_width=True):
+                st.session_state.mostrar_analisis = True
+                st.session_state.mostrar_perfil = False
+                st.rerun()
 
 def vista_perfil_pantalla_completa(gestor_usr):
     """Renderiza el historial y permite eliminar registros de operaciones pasadas."""
@@ -103,32 +110,66 @@ def vista_perfil_pantalla_completa(gestor_usr):
                         st.error(f"Error al cargar el archivo: {e}")
 
         with col2:
-            st.markdown("### Archivos Creados (Unificados)")
+            st.markdown("### Archivos Creados (Unificados y Limpios)")
             if not creados:
                 st.write("No hay archivos unificados.")
             for f in creados:
                 ruta = os.path.join(directorio_guardado, f)
-                if st.button(f"📄 {f}", key=f"btn_{f}"):
-                    try:
-                        st.session_state.nombre_archivo_actual = f
-                        df_cargado = pd.read_csv(ruta)
-                        st.session_state.df_crudo = df_cargado
-                        from apps.modulo_validacion import ATRIBUTOS_REQUERIDOS, ATRIBUTOS_OPCIONALES
-                        nuevo_mapeo = {}
-                        for attr in ATRIBUTOS_REQUERIDOS + ATRIBUTOS_OPCIONALES:
-                            if attr in df_cargado.columns:
-                                nuevo_mapeo[attr] = attr
-                            else:
-                                nuevo_mapeo[attr] = "(No asignar)"
-                        st.session_state.mapeo_columnas = nuevo_mapeo
-                        st.session_state.contrato_validado = True
-                        from modules.calidad import EstandarizadorDatos
-                        st.session_state.df_estandarizado = EstandarizadorDatos.normalizar(df_cargado)
-                        st.session_state.mostrar_perfil = False
-                        st.session_state.modo_limpieza_directa = True
-                        st.rerun()
-                    except Exception as e:
-                        st.error(f"Error al cargar el archivo: {e}")
+                es_limpio = f.endswith("_limpio.csv") or "limpio" in f.lower()
+
+                if es_limpio:
+                    c_btn_ver, c_btn_stat = st.columns([0.5, 0.5])
+                    with c_btn_ver:
+                        if st.button(f"📄 {f}", key=f"btn_{f}", use_container_width=True):
+                            try:
+                                st.session_state.nombre_archivo_actual = f
+                                df_cargado = pd.read_csv(ruta)
+                                st.session_state.df_crudo = df_cargado
+                                from apps.modulo_validacion import ATRIBUTOS_REQUERIDOS, ATRIBUTOS_OPCIONALES
+                                nuevo_mapeo = {attr: (attr if attr in df_cargado.columns else "(No asignar)") for attr in ATRIBUTOS_REQUERIDOS + ATRIBUTOS_OPCIONALES}
+                                st.session_state.mapeo_columnas = nuevo_mapeo
+                                st.session_state.contrato_validado = True
+                                from modules.calidad import EstandarizadorDatos
+                                st.session_state.df_estandarizado = EstandarizadorDatos.normalizar(df_cargado)
+                                st.session_state.mostrar_perfil = False
+                                st.session_state.modo_limpieza_directa = True
+                                st.rerun()
+                            except Exception as e:
+                                st.error(f"Error al cargar el archivo: {e}")
+                    with c_btn_stat:
+                        if st.button("📈 Simulación & Análisis", key=f"stat_{f}", use_container_width=True):
+                            try:
+                                st.session_state.nombre_archivo_actual = f
+                                df_cargado = pd.read_csv(ruta)
+                                st.session_state.df_limpio = df_cargado
+                                nuevo_mapeo = {col: col for col in df_cargado.columns}
+                                st.session_state.mapeo_columnas = nuevo_mapeo
+                                from modules.fabrica_vuelos import FabricaVuelos
+                                lista_vuelos = FabricaVuelos.instanciar_desde_dataframe(df_cargado, nuevo_mapeo)
+                                st.session_state.lista_vuelos = lista_vuelos
+                                st.session_state.mostrar_perfil = False
+                                st.session_state.modo_limpieza_directa = False
+                                st.session_state.mostrar_analisis = True
+                                st.rerun()
+                            except Exception as e:
+                                st.error(f"Error al procesar vuelos para análisis: {e}")
+                else:
+                    if st.button(f"📄 {f}", key=f"btn_{f}", use_container_width=True):
+                        try:
+                            st.session_state.nombre_archivo_actual = f
+                            df_cargado = pd.read_csv(ruta)
+                            st.session_state.df_crudo = df_cargado
+                            from apps.modulo_validacion import ATRIBUTOS_REQUERIDOS, ATRIBUTOS_OPCIONALES
+                            nuevo_mapeo = {attr: (attr if attr in df_cargado.columns else "(No asignar)") for attr in ATRIBUTOS_REQUERIDOS + ATRIBUTOS_OPCIONALES}
+                            st.session_state.mapeo_columnas = nuevo_mapeo
+                            st.session_state.contrato_validado = True
+                            from modules.calidad import EstandarizadorDatos
+                            st.session_state.df_estandarizado = EstandarizadorDatos.normalizar(df_cargado)
+                            st.session_state.mostrar_perfil = False
+                            st.session_state.modo_limpieza_directa = True
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"Error al cargar el archivo: {e}")
 
     st.divider()
     st.markdown('<h2 style="font-size: 1.8rem;">Historial de Limpiezas Realizadas</h2>', unsafe_allow_html=True)
@@ -147,7 +188,7 @@ def vista_perfil_pantalla_completa(gestor_usr):
             numero_operacion = i + 1
             
             with st.expander(f"📁 {archivos}  |  (Operación #{numero_operacion})", expanded=True):
-                col_info, col_eliminar = st.columns([0.8, 0.2])
+                col_info, col_acciones = st.columns([0.65, 0.35])
                 
                 with col_info:
                     st.write(f"**Filas procesadas:** {parametros.get('total_filas', 'N/A')}")
@@ -160,18 +201,34 @@ def vista_perfil_pantalla_completa(gestor_usr):
                     else:
                         st.write("*No se aplicaron imputaciones numéricas.*")
                         
-                with col_eliminar:
-                    st.write("") # Espaciador para centrar verticalmente
-                    # La clave incluye el índice 'i' original para no borrar el equivocado
-                    if st.button("🗑️ Eliminar", key=f"del_{i}", use_container_width=True):
-                        
-                        # ¡La magia ocurre aquí! Borramos directamente del diccionario
+                with col_acciones:
+                    # Enlace de acceso rápido a Análisis Estadístico
+                    if st.button("📈 Análisis Estadístico", key=f"hist_stat_{i}", use_container_width=True):
+                        ruta_hist = os.path.join(directorio_guardado, archivos)
+                        if os.path.exists(ruta_hist):
+                            try:
+                                st.session_state.nombre_archivo_actual = archivos
+                                df_cargado = pd.read_csv(ruta_hist)
+                                st.session_state.df_limpio = df_cargado
+                                nuevo_mapeo = {col: col for col in df_cargado.columns}
+                                st.session_state.mapeo_columnas = nuevo_mapeo
+                                from modules.fabrica_vuelos import FabricaVuelos
+                                lista_vuelos = FabricaVuelos.instanciar_desde_dataframe(df_cargado, nuevo_mapeo)
+                                st.session_state.lista_vuelos = lista_vuelos
+                                st.session_state.mostrar_perfil = False
+                                st.session_state.modo_limpieza_directa = False
+                                st.session_state.mostrar_analisis = True
+                                st.rerun()
+                            except Exception as e:
+                                st.error(f"Error al instanciar vuelos desde el archivo: {e}")
+                        else:
+                            st.warning("El archivo físico no se encuentra en el almacenamiento.")
+
+                    # Botón para eliminar registro del historial
+                    if st.button("🗑️ Eliminar Registro", key=f"del_{i}", use_container_width=True):
                         usuario_actual.sesion.data["historial_comandos"].pop(i)
-                        
-                        # Guardamos en el JSON / Base de datos
                         gestor_usr.guardar_usuario(usuario_actual)
-                        
-                        st.success("Archivo eliminado exitosamente.")
+                        st.success("Operación eliminada del historial.")
                         st.rerun()
     else:
         st.info("Aún no tienes procedimientos en tu historial.")

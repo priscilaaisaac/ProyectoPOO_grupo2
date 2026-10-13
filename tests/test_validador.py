@@ -1,6 +1,6 @@
 import unittest
 import pandas as pd
-from libs.validador import ValidadorEsquema
+from modules.validador import ValidadorEsquema
 
 class TestValidadorEsquemaAvanzado(unittest.TestCase):
     
@@ -38,8 +38,7 @@ class TestValidadorEsquemaAvanzado(unittest.TestCase):
             "precio": "costo"
         }
         
-        self.requeridos = list(self.mapeo.keys())
-        self.requeridos.remove("precio") # El precio es opcional
+        self.requeridos = list(self.mapeo.keys())  # El precio es estrictamente obligatorio
 
     def test_contrato_exitoso(self):
         """Verifica que un DataFrame correcto pase todas las validaciones."""
@@ -67,14 +66,15 @@ class TestValidadorEsquemaAvanzado(unittest.TestCase):
             validador.validar()
         self.assertIn("números enteros", str(ctx.exception))
 
-    def test_degradacion_elegante_sin_precio(self):
-        """Verifica que emita advertencia si no se asigna la variable opcional 'precio'."""
+    def test_falla_por_precio_no_asignado(self):
+        """Verifica que lance ValueError si no se asigna la variable obligatoria 'precio'."""
         mapeo_sin_precio = self.mapeo.copy()
         mapeo_sin_precio["precio"] = "(No asignar)"
         
         validador = ValidadorEsquema(self.df_valido, mapeo_sin_precio, self.requeridos)
-        resultado = validador.validar()
-        self.assertIn("Advertencia", resultado)
+        with self.assertRaises(ValueError) as ctx:
+            validador.validar()
+        self.assertIn("precio", str(ctx.exception).lower())
 
 if __name__ == '__main__':
     unittest.main()

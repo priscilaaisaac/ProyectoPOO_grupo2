@@ -14,6 +14,7 @@ from apps.modulo_usuario import modulo_usuario, vista_perfil_pantalla_completa
 from apps.modulo_ingestion import modulo_ingestion
 from apps.modulo_validacion import modulo_validacion
 from apps.modulo_limpieza import modulo_limpieza_y_dominio
+from apps.modulo_analisis import vista_analisis_estadistico
 
 def inicializar_estado():
     """Inicializa todas las variables de sesión globales necesarias."""
@@ -25,7 +26,10 @@ def inicializar_estado():
         "origen_por_columna": {}, 
         "contrato_validado": False,
         "mostrar_perfil": False,
-        "modo_limpieza_directa": False
+        "modo_limpieza_directa": False,
+        "mostrar_analisis": False,
+        "lista_vuelos": [],
+        "df_limpio": None
     }
     for clave, valor in claves_iniciales.items():
         if clave not in st.session_state:
@@ -53,11 +57,22 @@ def aplicar_estilos():
             opacity: 0.7;
             display: block;
         }
+        
+        /* Contenedor principal adaptable y fluido al ancho total */
+        .main .block-container {
+            max-width: 100% !important;
+            padding-left: 2rem !important;
+            padding-right: 2rem !important;
+        }
     </style>
     """, unsafe_allow_html=True)
 
 def main():
     """Ejecuta los módulos de la aplicación secuencialmente."""
+    try:
+        st.set_page_config(page_title="Sistema de Gestión de Vuelos", layout="wide")
+    except Exception:
+        pass
     inicializar_estado()
     aplicar_estilos()
     
@@ -67,7 +82,9 @@ def main():
     modulo_usuario(gestor_usr)
     
     # Lógica de navegación principal (Router)
-    if st.session_state.get("mostrar_perfil", False) and st.session_state.usuario_activo:
+    if st.session_state.get("mostrar_analisis", False):
+        vista_analisis_estadistico(gestor_usr)
+    elif st.session_state.get("mostrar_perfil", False) and st.session_state.usuario_activo:
         vista_perfil_pantalla_completa(gestor_usr)
     else:
         if st.session_state.get("modo_limpieza_directa", False):

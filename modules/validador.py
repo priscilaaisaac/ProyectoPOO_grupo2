@@ -87,9 +87,10 @@ class ReglaCapacidadesYPrecio(ReglaValidacion):
 
         c_precio = mapeo.get("precio")
         if not c_precio or c_precio == "(No asignar)":
-            raise ValueError("El atributo 'precio' es obligatorio.")
-        if c_precio in df.columns:
-            self._validar_numerica_tolerante(df[c_precio], "precio")
+            raise ValueError("El atributo 'precio' es estrictamente obligatorio para validar el contrato.")
+        if c_precio not in df.columns:
+            raise ValueError("La columna asignada al atributo 'precio' no existe en el conjunto de datos.")
+        self._validar_numerica_tolerante(df[c_precio], "precio")
 
     @staticmethod
     def _validar_enteros_tolerante(serie: pd.Series, nombre_campo: str):

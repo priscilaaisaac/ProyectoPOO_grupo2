@@ -43,10 +43,29 @@ class ReporteCalidad:
                 "Columna Real": col_real,
                 "Tipo de Dato": str(self.df[col_real].dtype),
                 "Cantidad Nulls": conteo_nulos,
-                "Porcentaje (%)": round(porcentaje, 2)
+                "Porcentaje (%)": round(porcentaje, 2),
+                "Pérdida si se descarta": f"{round(porcentaje, 2)}% ({conteo_nulos} filas)"
             })
 
         return pd.DataFrame(registros)
+
+    def calcular_impacto_descarte(self, col_real: str) -> tuple[int, float]:
+        """Calcula la cantidad de filas nulas y el porcentaje exacto de pérdida si se descarta."""
+        total = len(self.df)
+        if total == 0 or col_real not in self.df.columns:
+            return 0, 0.0
+        nulos = int(self.df[col_real].isna().sum())
+        porcentaje = (nulos / total) * 100.0
+        return nulos, round(porcentaje, 2)
+
+    def calcular_impacto_ambas_nulas(self, col1: str, col2: str) -> tuple[int, float]:
+        """Calcula la cantidad y porcentaje de filas donde ambas columnas son simultáneamente nulas."""
+        total = len(self.df)
+        if total == 0 or col1 not in self.df.columns or col2 not in self.df.columns:
+            return 0, 0.0
+        nulos = int((self.df[col1].isna() & self.df[col2].isna()).sum())
+        porcentaje = (nulos / total) * 100.0
+        return nulos, round(porcentaje, 2)
 
 
 class AnalizadorDuplicados:

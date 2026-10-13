@@ -19,11 +19,21 @@ class Vuelo:
         estado: str,
         capacidad_maxima_avion: int,
         capacidad_usada_avion: int,
-        precio: Optional[float] = None,
+        precio: float,
         id_vuelo: Optional[str] = None,
         origen: Optional[str] = None,
         destino: Optional[str] = None,
     ):
+        # Validación estricta de precio obligatorio
+        if precio is None:
+            raise ValueError("El atributo 'precio' es obligatorio para instanciar un objeto Vuelo.")
+        try:
+            self.precio = float(precio)
+        except (ValueError, TypeError):
+            raise ValueError(f"El valor de precio '{precio}' no es numérico válido.")
+        if self.precio < 0:
+            raise ValueError(f"El precio no puede ser negativo: {self.precio}")
+
         # Identificadores y ubicaciones
         self.id_vuelo = id_vuelo
         self.aeropuerto_origen = aeropuerto_origen
@@ -42,15 +52,14 @@ class Vuelo:
         self.capacidad_maxima_avion = int(capacidad_maxima_avion)
         self.capacidad_usada_avion = int(capacidad_usada_avion)
 
-        # Variables comerciales
-        self.precio = float(precio) if precio is not None else None
-
     # ----------------------------------------------------------------------
     # Cálculos Autónomos de Duración (REQ-06)
     # ----------------------------------------------------------------------
 
     def calcular_duracion_estipulada_minutos(self) -> float:
         """Calcula la duración programada del vuelo en minutos."""
+        if not self.fechayhora_destino_estipulado or not self.fechayhora_origen_estipulado:
+            return 0.0
         diferencia = self.fechayhora_destino_estipulado - self.fechayhora_origen_estipulado
         return max(0.0, diferencia.total_seconds() / 60.0)
 
@@ -99,12 +108,67 @@ class Vuelo:
             return 0.0
         return (self.capacidad_usada_avion / self.capacidad_maxima_avion) * 100.0
 
-    def calcular_ingresos_estimados(self) -> Optional[float]:
-        """Calcula el ingreso total generado por pasajes vendidos si existe precio."""
-        if self.precio is None:
-            return None
-        return self.precio * self.capacidad_usada_avion
+    def calcular_ingresos_estimados(self) -> float:
+        """Calcula el ingreso total generado por pasajes vendidos."""
+        return float(self.precio * self.capacidad_usada_avion)
+
+    def obtener_franja_horaria(self) -> str:
+        """
+        Clasifica el vuelo en una franja horaria según la hora estipulada
+        (o real) de salida.
+        """
+        import pandas as pd
+        dt = self.fechayhora_origen_estipulado or self.fechayhora_origen
+        if dt is None:
+            return "Sin horario"
+        if isinstance(dt, str):
+            try:
+                dt = pd.to_datetime(dt)
+            except Exception:
+                return "Sin horario"
+        hora = getattr(dt, "hour", None)
+        if hora is None:
+            return "Sin horario"
+        if 0 <= hora < 6:
+            return "Madrugada (00:00 - 06:00)"
+        elif 6 <= hora < 12:
+            return "Mañana (06:00 - 12:00)"
+        elif 12 <= hora < 18:
+            return "Tarde (12:00 - 18:00)"
+        else:
+            return "Noche (18:00 - 24:00)"
+
+    def obtener_ruta(self) -> str:
+        """Retorna la representación canónica de la ruta origen -> destino."""
+        orig = self.aeropuerto_origen or self.origen or "Desconocido"
+        dest = self.aeropuerto_destino or self.destino or "Desconocido"
+        return f"{orig} -> {dest}"
+
+    def obtener_categoria_ocupacion(self) -> str:
+        """Clasifica el nivel de ocupación en rangos estandarizados."""
+        factor = self.calcular_factor_ocupacion()
+        if factor < 50.0:
+            return "Baja (< 50%)"
+        elif factor <= 80.0:
+            return "Media (50% - 80%)"
+        else:
+            return "Alta (> 80%)"
+
+    def normalizar_estado(self) -> str:
+        """Estandariza el texto del estado del vuelo a los valores canónicos."""
+        if not self.estado:
+            return "Desconocido"
+        txt = str(self.estado).strip().lower()
+        if "atrasad" in txt:
+            return "Atrasado"
+        elif "a tiempo" in txt:
+            return "A tiempo"
+        elif "exitos" in txt:
+            return "Exitoso"
+        elif "cancelad" in txt:
+            return "Cancelado"
+        return "Desconocido"
 
     def __repr__(self) -> str:
         identificador = self.id_vuelo if self.id_vuelo else "Sin ID"
-        return f"<Vuelo {identificador}: {self.aeropuerto_origen} -> {self.aeropuerto_destino} | Estado: {self.estado}>"
+        return f"<Vuelo {identificador}: {self.aeropuerto_origen} -> {self.aeropuerto_destino} | Estado: {self.estado} | Precio: ${self.precio:.2f}>"

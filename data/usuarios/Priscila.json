@@ -2,7 +2,7 @@
     "username": "Priscila",
     "password_hash": "scrypt:32768:8:1$Cu3Pa9brBUWCC0SQ$96ba81b3cbc7d719d973921dbdf93727eb622c8a09145b0bb93f3a8e99c4dcf112263395b53a84f54b7d0d340d537b492844451404101a379a9a1c93dbc30a43",
     "sesion": {
-        "ultima_actualizacion": "2026-10-08 17:27:35",
+        "ultima_actualizacion": "2026-10-13 15:21:22",
         "origen_datos": null,
         "variables_excluidas": [],
         "mapeo_columnas": {
@@ -21,9 +21,10 @@
             "id_vuelo": "id_vuelo"
         },
         "configuracion_imputacion": {
-            "capacidad_maxima_avion": "No modificar (mantener nulos)",
-            "capacidad_usada_avion": "No modificar (mantener nulos)",
-            "precio": "Imputar con la mediana global"
+            "ubicaciones": "Imputación automática a 'Desconocido'",
+            "estado": "Imputación algorítmica inteligente",
+            "capacidades": "Imputar por Factor de Ocupación",
+            "precio": "Imputar con la mediana por grupos (país de origen y país de llegada)"
         },
         "historial_comandos": [
             {
@@ -36,6 +37,20 @@
                         "capacidad_maxima_avion": "No modificar (mantener nulos)",
                         "capacidad_usada_avion": "No modificar (mantener nulos)",
                         "precio": "Imputar con la mediana global"
+                    }
+                }
+            },
+            {
+                "timestamp": "2026-10-13 15:21:22",
+                "accion": "EjecucionPipelineLimpieza",
+                "parametros": {
+                    "archivos": "raw_dataset_vuelos_csv_faltante_limpio.csv",
+                    "total_filas": 100,
+                    "imputaciones": {
+                        "ubicaciones": "Imputación automática a 'Desconocido'",
+                        "estado": "Imputación algorítmica inteligente",
+                        "capacidades": "Imputar por Factor de Ocupación",
+                        "precio": "Imputar con la mediana por grupos (país de origen y país de llegada)"
                     }
                 }
             }

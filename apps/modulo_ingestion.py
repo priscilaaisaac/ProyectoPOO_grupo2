@@ -31,7 +31,7 @@ def modulo_ingestion():
     st.divider()
 
     if st.session_state.origen_datos == "CSV":
-        st.markdown('<h3 style="font-size: 1.4rem;">Carga de archivos locales</h3>', unsafe_allow_html=True)
+        st.subheader("Carga de archivo local")
         st.info("Si agrega más de un archivo, las columnas se identificarán por separado con su respectivo origen.")
         archivos_subidos = st.file_uploader("Selecciona uno o más archivos", type=["csv", "txt", "xlsx", "xltx", "xltm"], accept_multiple_files=True)
 
@@ -93,7 +93,7 @@ def modulo_ingestion():
             st.session_state.archivos_crudos_temporales = []
 
     elif st.session_state.origen_datos == "SQL":
-        st.markdown('<h3 style="font-size: 1.4rem;">Conexión a Base de Datos</h3>', unsafe_allow_html=True)
+        st.subheader("Conexión a Base de Datos")
         conexion_sql = st.text_input("Cadena de conexión (URI):")
         tabla_sql = st.text_input("Nombre de la tabla:")
 

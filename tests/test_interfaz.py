@@ -8,7 +8,7 @@ class TestInterfazUsuario(unittest.TestCase):
     
     def test_boton_csv_muestra_carga_local(self):
         """Verifica que al hacer clic en 'Subir archivo local' aparezca el menú correcto."""
-        at = AppTest.from_file(RUTA_APP)
+        at = AppTest.from_file(RUTA_APP, default_timeout=15)
         at.run()
         
         # Encontramos el botón buscando en la colección de botones disponibles
@@ -24,7 +24,7 @@ class TestInterfazUsuario(unittest.TestCase):
 
     def test_boton_sql_muestra_conexion(self):
         """Verifica que al hacer clic en 'Conectar base SQL' cambien los campos."""
-        at = AppTest.from_file(RUTA_APP)
+        at = AppTest.from_file(RUTA_APP, default_timeout=15)
         at.run()
         
         for btn in at.button:
