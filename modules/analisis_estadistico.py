@@ -19,29 +19,33 @@ class MotorEstadisticoVuelos:
     # ----------------------------------------------------------------------
 
     def calcular_conteos_marginales(self) -> Dict[str, int]:
-        """Calcula el número absoluto de vuelos por cada estado canónico."""
-        conteos = {"Atrasado": 0, "A tiempo": 0, "Exitoso": 0, "Cancelado": 0, "Desconocido": 0}
+        """Calcula el número absoluto de vuelos por cada estado canónico (excluyendo Desconocido)."""
+        conteos = {"Atrasado": 0, "A tiempo": 0, "Exitoso": 0, "Cancelado": 0}
         for v in self.vuelos:
             est = v.normalizar_estado()
-            conteos[est] = conteos.get(est, 0) + 1
+            if est in conteos:
+                conteos[est] += 1
         return conteos
 
     def calcular_probabilidades_marginales(self) -> Dict[str, float]:
         """
-        Retorna la probabilidad marginal global P(Estado = e) para cada estado,
-        con valores entre 0.0 y 1.0.
+        Retorna la probabilidad marginal global P(Estado = e) para cada estado canónico válido,
+        con valores entre 0.0 y 1.0 sumando 1.0.
         """
         conteos = self.calcular_conteos_marginales()
-        return {k: v / self.total_vuelos for k, v in conteos.items()}
+        total_validos = sum(conteos.values())
+        if total_validos == 0:
+            return {k: 0.0 for k in conteos}
+        return {k: v / total_validos for k, v in conteos.items()}
 
     # ----------------------------------------------------------------------
     # Métodos Auxiliares de Extracción de Dimensiones
     # ----------------------------------------------------------------------
 
     def obtener_rutas_disponibles(self) -> List[str]:
-        """Lista ordenada de rutas únicas presentes en la colección."""
+        """Lista ordenada de rutas únicas presentes en la colección (excluyendo cualquier ruta con 'Desconocido')."""
         rutas = sorted(list(set(v.obtener_ruta() for v in self.vuelos)))
-        return [r for r in rutas if r != "Desconocido -> Desconocido"]
+        return [r for r in rutas if "desconocido" not in r.lower()]
 
     def obtener_franjas_disponibles(self) -> List[str]:
         """Lista de franjas horarias estándar."""
@@ -63,12 +67,17 @@ class MotorEstadisticoVuelos:
     def _generar_tabla_condicional(self, dimension_func, nombre_columna: str) -> pd.DataFrame:
         registros = []
         for v in self.vuelos:
+            dim_val = dimension_func(v)
+            if "desconocido" in str(dim_val).lower():
+                continue
             registros.append({
-                nombre_columna: dimension_func(v),
+                nombre_columna: dim_val,
                 "estado": v.normalizar_estado(),
                 "precio": v.precio,
                 "factor_ocupacion": v.calcular_factor_ocupacion()
             })
+        if not registros:
+            return pd.DataFrame()
         df_temp = pd.DataFrame(registros)
 
         grupos = df_temp.groupby(nombre_columna)

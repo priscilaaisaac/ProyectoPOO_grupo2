@@ -1,6 +1,7 @@
 import pandas as pd
 from typing import List
 from modules.Vuelos import Vuelo
+from modules.validador import ValidadorPreInstanciacion
 
 
 class FabricaVuelos:
@@ -10,11 +11,15 @@ class FabricaVuelos:
     def instanciar_desde_dataframe(df_limpio: pd.DataFrame, mapeo: dict) -> List[Vuelo]:
         """
         Convierte cada una de las filas del DataFrame en un objeto Vuelo.
-        El atributo 'precio' es estrictamente obligatorio. Si algún registro no cuenta
-        con un precio numérico válido, se lanza un ValueError bloqueando el proceso.
+        El atributo 'precio' y los campos obligatorios son estrictamente validados antes
+        de la instanciación. Si algún registro no cumple el contrato o contiene valores
+        inválidos/nulos sin tratar, se lanza un ValueError bloqueando el proceso.
         """
         if df_limpio is None or df_limpio.empty:
             return []
+
+        # Verificación estricta previa de tipos, rangos y completitud de campos obligatorios
+        ValidadorPreInstanciacion.validar(df_limpio, mapeo)
 
         vuelos: List[Vuelo] = []
         df_trabajo = df_limpio.copy()

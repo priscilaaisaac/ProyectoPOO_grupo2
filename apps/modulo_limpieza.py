@@ -9,6 +9,7 @@ from modules.pipeline_limpieza import (
     GeneradorIdVuelo, AutogeneradorIds, EliminadorFilasNulas
 )
 from modules.fabrica_vuelos import FabricaVuelos
+from modules.validador import ValidadorPreInstanciacion
 
 COLUMNAS_CANONICAS = [
     "id_vuelo",
@@ -302,14 +303,62 @@ def modulo_limpieza_y_dominio(gestor_usr):
 
         df_limpio = pipeline.ejecutar(df_norm)
 
-        # PRE-VALIDACIÓN: Garantizar que NINGÚN registro con precio nulo o inválido pase a la fábrica
+        # PRE-VALIDACIÓN Y SANEAMIENTO FINAL DE CAMPOS OBLIGATORIOS:
+        # 1. Precio: sin nulos ni negativos
         col_p = mapeo.get("precio") or ("precio" if "precio" in df_limpio.columns else None)
         if col_p and col_p in df_limpio.columns:
             s_p = pd.to_numeric(df_limpio[col_p], errors="coerce")
             nulos_p = s_p.isna() | (s_p < 0)
             if nulos_p.any():
-                media_p = round(float(s_p.dropna().mean()), 2) if s_p.dropna().any() else 100.0
-                df_limpio[col_p] = s_p.fillna(media_p)
+                media_p = round(float(s_p.dropna().mean()), 2) if (s_p.dropna() >= 0).any() else 100.0
+                df_limpio[col_p] = s_p.fillna(media_p).clip(lower=0.0)
+
+        # 2. Capacidades: enteras, no negativas, usada <= maxima
+        col_cmax = mapeo.get("capacidad_maxima_avion") or ("capacidad_maxima_avion" if "capacidad_maxima_avion" in df_limpio.columns else None)
+        col_cusada = mapeo.get("capacidad_usada_avion") or ("capacidad_usada_avion" if "capacidad_usada_avion" in df_limpio.columns else None)
+        if col_cmax and col_cmax in df_limpio.columns:
+            s_cmax = pd.to_numeric(df_limpio[col_cmax], errors="coerce")
+            val_cmax_def = int(s_cmax.dropna().median()) if (s_cmax.dropna() > 0).any() else 180
+            df_limpio[col_cmax] = s_cmax.fillna(val_cmax_def).clip(lower=1).round().astype(int)
+
+        if col_cusada and col_cusada in df_limpio.columns:
+            s_cusada = pd.to_numeric(df_limpio[col_cusada], errors="coerce")
+            max_referencia = df_limpio[col_cmax] if (col_cmax and col_cmax in df_limpio.columns) else 180
+            df_limpio[col_cusada] = s_cusada.fillna((max_referencia * 0.75).round()).clip(lower=0).round().astype(int)
+
+        if col_cmax and col_cusada and col_cmax in df_limpio.columns and col_cusada in df_limpio.columns:
+            exceso = df_limpio[col_cusada] > df_limpio[col_cmax]
+            if exceso.any():
+                df_limpio.loc[exceso, col_cusada] = df_limpio.loc[exceso, col_cmax]
+
+        # 3. Fechas estipuladas: parseables, sin nulos y coherentes
+        col_forig_est = mapeo.get("fechayhora_origen_estipulado") or ("fechayhora_origen_estipulado" if "fechayhora_origen_estipulado" in df_limpio.columns else None)
+        col_fdest_est = mapeo.get("fechayhora_destino_estipulado") or ("fechayhora_destino_estipulado" if "fechayhora_destino_estipulado" in df_limpio.columns else None)
+        if col_forig_est and col_forig_est in df_limpio.columns:
+            s_forig = pd.to_datetime(df_limpio[col_forig_est], errors="coerce")
+            if s_forig.isna().any():
+                col_real_orig = mapeo.get("fechayhora_origen") or ("fechayhora_origen" if "fechayhora_origen" in df_limpio.columns else None)
+                if col_real_orig and col_real_orig in df_limpio.columns:
+                    s_forig = s_forig.combine_first(pd.to_datetime(df_limpio[col_real_orig], errors="coerce"))
+                s_forig = s_forig.fillna(pd.Timestamp("2026-10-01 08:00:00"))
+            df_limpio[col_forig_est] = s_forig
+
+        if col_fdest_est and col_fdest_est in df_limpio.columns:
+            s_fdest = pd.to_datetime(df_limpio[col_fdest_est], errors="coerce")
+            if s_fdest.isna().any():
+                col_real_dest = mapeo.get("fechayhora_destino") or ("fechayhora_destino" if "fechayhora_destino" in df_limpio.columns else None)
+                if col_real_dest and col_real_dest in df_limpio.columns:
+                    s_fdest = s_fdest.combine_first(pd.to_datetime(df_limpio[col_real_dest], errors="coerce"))
+                if col_forig_est and col_forig_est in df_limpio.columns:
+                    s_fdest = s_fdest.combine_first(pd.to_datetime(df_limpio[col_forig_est]) + pd.Timedelta(hours=2))
+                s_fdest = s_fdest.fillna(pd.Timestamp("2026-10-01 10:00:00"))
+
+            if col_forig_est and col_forig_est in df_limpio.columns:
+                fechas_inv = s_fdest < df_limpio[col_forig_est]
+                if fechas_inv.any():
+                    s_fdest.loc[fechas_inv] = df_limpio.loc[fechas_inv, col_forig_est] + pd.Timedelta(hours=2)
+
+            df_limpio[col_fdest_est] = s_fdest
 
         # FILTRADO ESTRICTO: Garantizar que df_limpio contenga ÚNICAMENTE las 13 columnas canónicas limpias
         for col_c in COLUMNAS_CANONICAS:
@@ -317,16 +366,17 @@ def modulo_limpieza_y_dominio(gestor_usr):
                 df_limpio[col_c] = None
         df_limpio = df_limpio[COLUMNAS_CANONICAS].copy()
 
-        # Instanciación estricta a objetos Vuelo (REQ: precio obligatorio)
+        # Instanciación estricta a objetos Vuelo con pre-validación de contrato
         try:
+            ValidadorPreInstanciacion.validar(df_limpio, st.session_state.mapeo_columnas)
             lista_vuelos = FabricaVuelos.instanciar_desde_dataframe(df_limpio, st.session_state.mapeo_columnas)
             st.session_state.df_limpio = df_limpio
             st.session_state.lista_vuelos = lista_vuelos
             st.session_state.pipeline_ejecutado_recientemente = True
             st.success(f"¡Pipeline ejecutado! Se instanciaron con éxito {len(lista_vuelos)} objetos Vuelo.")
         except ValueError as e:
-            st.error(f"❌ Error en la instanciación de objetos Vuelo: {e}")
-            st.warning("El atributo 'precio' es estrictamente obligatorio para todos los vuelos.")
+            st.error(f"❌ Error en la validación / instanciación de objetos Vuelo: {e}")
+            st.warning("Verifique que todos los campos requeridos cumplan con los tipos y rangos válidos.")
             return
 
         if st.session_state.usuario_activo:
