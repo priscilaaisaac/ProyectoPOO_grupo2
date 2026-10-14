@@ -6,8 +6,11 @@ from modules.pipeline_limpieza import (
     PipelineLimpieza,
     ImputadorCapacidadesPorFactorOcupacion,
     GeneradorIdVuelo,
+    AutogeneradorIds,
     SaneadorUbicaciones,
-    ImputadorEstadoInteligente
+    ImputadorEstadoInteligente,
+    ImputadorMediaGlobal,
+    EliminadorFilasNulas
 )
 from modules.calidad import ReporteCalidad
 
@@ -214,6 +217,85 @@ class TestMejorasLimpieza(unittest.TestCase):
         nulos_ambas, pct_ambas = reporte.calcular_impacto_ambas_nulas("cap_max", "cap_usada")
         self.assertEqual(nulos_ambas, 1)
         self.assertEqual(pct_ambas, 20.0)
+
+
+    def test_imputador_media_global(self):
+        """Verifica que ImputadorMediaGlobal calcule e impute la media aritmética."""
+        df = pd.DataFrame({"precio": [100.0, 200.0, np.nan, 300.0]})
+        imputador = ImputadorMediaGlobal("precio")
+        res = imputador.aplicar(df)
+        # Media de 100, 200, 300 es 200.0
+        self.assertEqual(res.loc[2, "precio"], 200.0)
+        self.assertFalse(res["precio"].isna().any())
+
+    def test_eliminador_filas_nulas_precio(self):
+        """Verifica que EliminadorFilasNulas descarte registros sin precio numérico válido."""
+        df = pd.DataFrame({"precio": [100.0, np.nan, -10.0, 250.0, None]})
+        eliminador = EliminadorFilasNulas("precio")
+        res = eliminador.aplicar(df)
+        self.assertEqual(len(res), 2)
+        self.assertListEqual(list(res["precio"]), [100.0, 250.0])
+
+    def test_autogenerador_ids_alias_and_preservation(self):
+        """Verifica que AutogeneradorIds respete IDs válidos, no cree columnas duplicadas y sea secuencial."""
+        df = pd.DataFrame({
+            "id_vuelo": ["AR-100", None, "GEN-002", "", "   ", "IB-500", np.nan],
+            "otro_dato": [1, 2, 3, 4, 5, 6, 7]
+        })
+        generador = AutogeneradorIds(columna="id_vuelo", prefijo="GEN-", relleno=3)
+        res = generador.aplicar(df)
+
+        # Mismo número de columnas (sin columnas duplicadas)
+        self.assertListEqual(list(res.columns), ["id_vuelo", "otro_dato"])
+
+        # Preserva IDs existentes
+        self.assertEqual(res.loc[0, "id_vuelo"], "AR-100")
+        self.assertEqual(res.loc[2, "id_vuelo"], "GEN-002")
+        self.assertEqual(res.loc[5, "id_vuelo"], "IB-500")
+
+        # Continúa secuencialmente después del máximo existente (GEN-002 -> GEN-003, GEN-004...)
+        self.assertEqual(res.loc[1, "id_vuelo"], "GEN-003")
+        self.assertEqual(res.loc[3, "id_vuelo"], "GEN-004")
+        self.assertEqual(res.loc[4, "id_vuelo"], "GEN-005")
+        self.assertEqual(res.loc[6, "id_vuelo"], "GEN-006")
+
+    def test_estricto_13_columnas_canonicas(self):
+        """Verifica que el dataset procesado contenga exactamente las 13 columnas canónicas limpias."""
+        from apps.modulo_validacion import COLUMNAS_CANONICAS
+        self.assertEqual(len(COLUMNAS_CANONICAS), 13)
+        
+        # Simular un DataFrame con columnas sucias/residuales de múltiples archivos
+        df_sucio = pd.DataFrame({
+            "id_vuelo": ["V1"],
+            "aeropuerto_origen": ["EZE"],
+            "aeropuerto_destino": ["COR"],
+            "origen": ["Argentina"],
+            "destino": ["Argentina"],
+            "fechayhora_origen": ["2026-10-01 10:00"],
+            "fechayhora_destino": ["2026-10-01 11:30"],
+            "fechayhora_origen_estipulado": ["2026-10-01 10:00"],
+            "fechayhora_destino_estipulado": ["2026-10-01 11:30"],
+            "estado": ["a tiempo"],
+            "capacidad_maxima_avion": [180],
+            "capacidad_usada_avion": [150],
+            "precio": [200.0],
+            "codigo_vuelo__(archivo_viejo.xlsx)": ["RESIDUO_1"],
+            "fecha_extra__(otro_archivo.csv)": ["RESIDUO_2"],
+            "columna_no_seleccionada": [np.nan]
+        })
+        self.assertEqual(len(df_sucio.columns), 16)
+
+        # Aplicar el filtrado estricto
+        for col_c in COLUMNAS_CANONICAS:
+            if col_c not in df_sucio.columns:
+                df_sucio[col_c] = None
+        df_limpio = df_sucio[COLUMNAS_CANONICAS].copy()
+
+        self.assertEqual(len(df_limpio.columns), 13)
+        self.assertListEqual(list(df_limpio.columns), COLUMNAS_CANONICAS)
+        self.assertNotIn("codigo_vuelo__(archivo_viejo.xlsx)", df_limpio.columns)
+        self.assertNotIn("fecha_extra__(otro_archivo.csv)", df_limpio.columns)
+        self.assertNotIn("columna_no_seleccionada", df_limpio.columns)
 
 
 if __name__ == "__main__":

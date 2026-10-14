@@ -71,10 +71,10 @@ def modulo_ingestion():
 
                         nombres_renombrados = {}
                         for col in df_comp.columns:
-                            col_id_unico = f"{col}__({archivo.name})"
+                            col_id_unico = f"{col}__({archivo.name})" if len(archivos_subidos) > 1 else str(col)
                             nombres_renombrados[col] = col_id_unico
                             columnas_separadas.append(col_id_unico)
-                            origen_map[col_id_unico] = {"archivo": archivo.name, "nombre_original": col}
+                            origen_map[col_id_unico] = {"archivo": archivo.name, "nombre_original": str(col)}
 
                         dfs_procesados.append(df_comp.rename(columns=nombres_renombrados))
 

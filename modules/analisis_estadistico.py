@@ -2,7 +2,6 @@ from typing import List, Dict, Any, Optional
 import pandas as pd
 from modules.Vuelos import Vuelo
 
-
 class MotorEstadisticoVuelos:
     """
     Motor estadístico orientado a objetos que calcula probabilidades marginales,

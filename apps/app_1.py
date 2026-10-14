@@ -90,11 +90,18 @@ def main():
         if st.session_state.get("modo_limpieza_directa", False):
             # Si venimos del perfil con un archivo cargado, vamos directo a limpiar
             modulo_limpieza_y_dominio(gestor_usr)
-            if st.button("Volver al Inicio", use_container_width=True):
-                st.session_state.modo_limpieza_directa = False
-                st.session_state.df_crudo = None
-                st.session_state.contrato_validado = False
-                st.rerun()
+            col_v1, col_v2 = st.columns(2)
+            with col_v1:
+                if st.button("⬅️ Volver a Mis Archivos Guardados", key="btn_volver_archivos_guardados", use_container_width=True):
+                    st.session_state.modo_limpieza_directa = False
+                    st.session_state.mostrar_perfil = True
+                    st.rerun()
+            with col_v2:
+                if st.button("🏠 Volver al Inicio", key="btn_volver_inicio_directo", use_container_width=True):
+                    st.session_state.modo_limpieza_directa = False
+                    st.session_state.df_crudo = None
+                    st.session_state.contrato_validado = False
+                    st.rerun()
         else:
             modulo_ingestion()
             modulo_validacion()

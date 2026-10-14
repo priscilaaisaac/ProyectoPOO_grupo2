@@ -39,6 +39,21 @@ class ImputadorMedianaGlobal(OperacionLimpieza):
         return df_resultado
 
 
+class ImputadorMediaGlobal(OperacionLimpieza):
+    """Imputa nulos de una columna numérica con la media aritmética (promedio) de toda la columna."""
+
+    def __init__(self, columna: str):
+        self.columna = columna
+
+    def aplicar(self, df: pd.DataFrame) -> pd.DataFrame:
+        df_resultado = df.copy()
+        if self.columna in df_resultado.columns:
+            valores_num = pd.to_numeric(df_resultado[self.columna], errors="coerce")
+            media = round(float(valores_num.mean()), 2) if valores_num.notna().any() else 0.0
+            df_resultado[self.columna] = valores_num.fillna(media)
+        return df_resultado
+
+
 class ImputadorMedianaPorGrupo(OperacionLimpieza):
     """Imputa nulos usando la mediana agrupada por país de origen y país de destino."""
 
@@ -271,24 +286,38 @@ class GeneradorIdVuelo(OperacionLimpieza):
     """
     Autogenera identificadores secuenciales únicos para registros con 'id_vuelo' nulo o vacío.
     Formato: prefijo + número secuencial con ceros a la izquierda (ej. GEN-001, GEN-002, ...).
+    Preserva intactos los identificadores existentes válidos y no crea columnas duplicadas.
     """
 
     def __init__(self, columna: str = "id_vuelo", prefijo: str = "GEN-", relleno: int = 3):
-        self.columna = columna
+        self.columna = columna or "id_vuelo"
         self.prefijo = prefijo
         self.relleno = relleno
 
     def aplicar(self, df: pd.DataFrame) -> pd.DataFrame:
         df_resultado = df.copy()
-        if self.columna not in df_resultado.columns:
-            df_resultado[self.columna] = None
+        col = self.columna
+        if col not in df_resultado.columns and "id_vuelo" in df_resultado.columns:
+            col = "id_vuelo"
+        elif col not in df_resultado.columns:
+            df_resultado[col] = None
 
-        serie_str = df_resultado[self.columna].astype(str).str.strip().str.lower()
-        es_nulo = df_resultado[self.columna].isna() | serie_str.isin(["", "nan", "none", "null", "n/a", "nat"])
+        df_resultado[col] = df_resultado[col].astype(object)
+
+        serie_str = df_resultado[col].astype(str).str.strip().str.lower()
+        es_nulo = df_resultado[col].isna() | serie_str.isin(["", "nan", "none", "null", "n/a", "nat", "<na>"])
 
         cant_nulos = int(es_nulo.sum())
         if cant_nulos > 0:
-            contador = 1
+            numeros_existentes = []
+            for val in df_resultado.loc[~es_nulo, col]:
+                val_str = str(val).strip()
+                if val_str.startswith(self.prefijo):
+                    resto = val_str[len(self.prefijo):]
+                    if resto.isdigit():
+                        numeros_existentes.append(int(resto))
+            contador = (max(numeros_existentes) + 1) if numeros_existentes else 1
+
             nuevos_ids = []
             for nulo in es_nulo:
                 if nulo:
@@ -297,9 +326,12 @@ class GeneradorIdVuelo(OperacionLimpieza):
                 else:
                     nuevos_ids.append(None)
 
-            df_resultado.loc[es_nulo, self.columna] = [nid for nid in nuevos_ids if nid is not None]
+            df_resultado.loc[es_nulo, col] = [nid for nid in nuevos_ids if nid is not None]
 
         return df_resultado
+
+
+AutogeneradorIds = GeneradorIdVuelo
 
 
 class TratamientoFechas(OperacionLimpieza):
@@ -343,8 +375,17 @@ class EliminadorFilasNulas(OperacionLimpieza):
     def aplicar(self, df: pd.DataFrame) -> pd.DataFrame:
         df_resultado = df.copy()
         if self.columna in df_resultado.columns:
-            fechas_dt = pd.to_datetime(df_resultado[self.columna], errors="coerce")
-            mask_valida = df_resultado[self.columna].notna() & fechas_dt.notna()
+            serie = df_resultado[self.columna]
+            if "fecha" in self.columna.lower():
+                fechas_dt = pd.to_datetime(serie, errors="coerce")
+                mask_valida = serie.notna() & fechas_dt.notna()
+            elif pd.api.types.is_numeric_dtype(serie) or "precio" in self.columna.lower() or "capacidad" in self.columna.lower():
+                valores_num = pd.to_numeric(serie, errors="coerce")
+                mask_valida = valores_num.notna() & (valores_num >= 0)
+                df_resultado[self.columna] = valores_num
+            else:
+                serie_str = serie.astype(str).str.strip().str.lower()
+                mask_valida = serie.notna() & ~serie_str.isin(["", "nan", "none", "null", "n/a", "nat"])
             df_resultado = df_resultado[mask_valida].reset_index(drop=True)
         return df_resultado
 

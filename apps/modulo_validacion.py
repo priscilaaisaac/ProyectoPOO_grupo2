@@ -1,4 +1,5 @@
 import streamlit as st
+import pandas as pd
 from modules.validador import ValidadorEsquema
 from modules.calidad import EstandarizadorDatos
 
@@ -11,6 +12,22 @@ ATRIBUTOS_REQUERIDOS = [
 ]
 
 ATRIBUTOS_OPCIONALES = ["id_vuelo"]
+
+COLUMNAS_CANONICAS = [
+    "id_vuelo",
+    "aeropuerto_origen",
+    "aeropuerto_destino",
+    "origen",
+    "destino",
+    "fechayhora_origen",
+    "fechayhora_destino",
+    "fechayhora_origen_estipulado",
+    "fechayhora_destino_estipulado",
+    "estado",
+    "capacidad_maxima_avion",
+    "capacidad_usada_avion",
+    "precio"
+]
 
 def modulo_validacion():
     columnas_usuario = st.session_state.columnas_disponibles
@@ -77,21 +94,34 @@ def modulo_validacion():
                     with open(ruta_crudo, "wb") as f:
                         f.write(archivo.getvalue())
                         
-            # Renombrar las columnas al mapeo canónico
-            mapeo_inverso = {v: k for k, v in mapeo_columnas.items() if v != "(No asignar)"}
-            df_unificado = df_completo.rename(columns=mapeo_inverso)
-            
-            # Limpiar columnas que no fueron mapeadas y no nos interesan?
-            # El usuario dijo "a partir de las columnas de los archivos que se deseó cargar"
-            # Dejaremos todas las que no fueron excluidas.
-            
+            # Construir df_unificado conteniendo ÚNICAMENTE las 13 columnas canónicas limpias
+            df_unificado = pd.DataFrame(index=df_completo.index)
+            origen_map = st.session_state.get("origen_por_columna", {})
+            for col_canon in COLUMNAS_CANONICAS:
+                col_src = mapeo_columnas.get(col_canon)
+                if col_src and col_src != "(No asignar)" and col_src in df_completo.columns:
+                    serie = df_completo[col_src].copy()
+                    # Coalescer si provienen de múltiples archivos consolidados verticalmente
+                    info_src = origen_map.get(col_src)
+                    if info_src and serie.isna().any():
+                        orig_name = info_src.get("nombre_original")
+                        for otra_col, info_otra in origen_map.items():
+                            if otra_col != col_src and info_otra.get("nombre_original") == orig_name and otra_col in df_completo.columns:
+                                serie = serie.combine_first(df_completo[otra_col])
+                    df_unificado[col_canon] = serie.values
+                else:
+                    df_unificado[col_canon] = None
+
+            # Garantizar orden canónico exacto
+            df_unificado = df_unificado[COLUMNAS_CANONICAS].copy()
+
             ruta_unificado = os.path.join(directorio_guardado, f"{nombre_archivo_nuevo}.csv")
             df_unificado.to_csv(ruta_unificado, index=False)
             st.session_state.nombre_archivo_actual = f"{nombre_archivo_nuevo}.csv"
 
             st.session_state.df_crudo = df_unificado
-            # El nuevo mapeo es 1:1 para las columnas canónicas
-            nuevo_mapeo = {k: k for k in mapeo_columnas.keys() if mapeo_columnas[k] != "(No asignar)"}
+            # El nuevo mapeo es 1:1 para todas las columnas canónicas
+            nuevo_mapeo = {col: col for col in COLUMNAS_CANONICAS}
             st.session_state.mapeo_columnas = nuevo_mapeo
             st.session_state.contrato_validado = True
             st.session_state.df_estandarizado = EstandarizadorDatos.normalizar(df_unificado)

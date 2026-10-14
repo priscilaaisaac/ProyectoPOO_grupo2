@@ -26,6 +26,19 @@ class SesionAnalisis:
         self.data["configuracion_imputacion"] = imputacion
 
     def registrar_comando(self, accion: str, parametros: dict):
+        if not accion or not str(accion).strip():
+            return
+        
+        # Validar y normalizar el nombre del archivo para evitar 'Archivo desconocido'
+        archivo_val = parametros.get("archivos") or parametros.get("archivo")
+        if not archivo_val or str(archivo_val).strip() in ["", "None", "Archivo desconocido", "Dataset Activo"]:
+            archivo_normalizado = "dataset_vuelos.csv"
+        else:
+            archivo_normalizado = str(archivo_val).strip()
+            
+        parametros["archivos"] = archivo_normalizado
+        parametros["archivo"] = archivo_normalizado
+
         self.data["historial_comandos"].append({
             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "accion": accion,

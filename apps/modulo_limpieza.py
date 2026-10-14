@@ -1,14 +1,127 @@
 import streamlit as st
-from modules.calidad import ReporteCalidad, AnalizadorDuplicados
+import os
+import pandas as pd
+from modules.calidad import ReporteCalidad, AnalizadorDuplicados, EstandarizadorDatos
 from modules.pipeline_limpieza import (
     PipelineLimpieza, SaneadorCategoricos, SaneadorUbicaciones,
-    ImputadorMedianaGlobal, ImputadorMedianaPorGrupo,
+    ImputadorMedianaGlobal, ImputadorMedianaPorGrupo, ImputadorMediaGlobal,
     ImputadorCapacidadesPorFactorOcupacion, ImputadorEstadoInteligente,
-    GeneradorIdVuelo
+    GeneradorIdVuelo, AutogeneradorIds, EliminadorFilasNulas
 )
 from modules.fabrica_vuelos import FabricaVuelos
 
+COLUMNAS_CANONICAS = [
+    "id_vuelo",
+    "aeropuerto_origen",
+    "aeropuerto_destino",
+    "origen",
+    "destino",
+    "fechayhora_origen",
+    "fechayhora_destino",
+    "fechayhora_origen_estipulado",
+    "fechayhora_destino_estipulado",
+    "estado",
+    "capacidad_maxima_avion",
+    "capacidad_usada_avion",
+    "precio"
+]
+
 def modulo_limpieza_y_dominio(gestor_usr):
+    nombre_arch = str(st.session_state.get("nombre_archivo_actual", "")).lower()
+    nombre_actual = st.session_state.get("nombre_archivo_actual", "Dataset Activo")
+    es_archivo_limpio = st.session_state.get("archivo_es_limpio", False) or nombre_arch.endswith("_limpio.csv") or "limpio" in nombre_arch
+
+    if es_archivo_limpio:
+        st.divider()
+
+        df_mostrar = st.session_state.get("df_limpio")
+        if df_mostrar is None:
+            df_mostrar = st.session_state.get("df_estandarizado") or st.session_state.get("df_crudo")
+
+        mapeo = st.session_state.get("mapeo_columnas", {})
+        if not mapeo and df_mostrar is not None:
+            mapeo = {col: col for col in df_mostrar.columns}
+            st.session_state.mapeo_columnas = mapeo
+
+        df_norm = st.session_state.get("df_estandarizado")
+        if df_norm is None and df_mostrar is not None:
+            df_norm = EstandarizadorDatos.normalizar(df_mostrar)
+            st.session_state.df_estandarizado = df_norm
+        elif df_norm is None:
+            df_norm = df_mostrar
+
+        # ---------------------------------------------------------------------
+        # Cabecera: Nombre del archivo a la izquierda y Botón a la derecha
+        # ---------------------------------------------------------------------
+        col_izq, col_der = st.columns([0.65, 0.35])
+        with col_izq:
+            st.markdown(f'<h2 style="font-size: 1.85rem; margin-bottom: 0.1rem;">📄 {nombre_actual}</h2>', unsafe_allow_html=True)
+            st.caption("Archivo unificado y limpio • Procesado y listo para análisis")
+        with col_der:
+            st.write("")  # Espaciador vertical
+            if st.button("📊 Ir a Análisis Estadístico ➡️", key="btn_ir_analisis_desde_limpio_header", use_container_width=True):
+                if df_mostrar is not None:
+                    try:
+                        # PRE-VALIDACIÓN: Filtrar nulos en precio antes de instanciar vuelos
+                        df_para_vuelos = df_mostrar.copy()
+                        col_p = mapeo.get("precio") or ("precio" if "precio" in df_para_vuelos.columns else None)
+                        if col_p and col_p in df_para_vuelos.columns:
+                            s_p = pd.to_numeric(df_para_vuelos[col_p], errors="coerce")
+                            nulos_p = s_p.isna() | (s_p < 0)
+                            if nulos_p.any():
+                                df_para_vuelos = df_para_vuelos[~nulos_p].copy().reset_index(drop=True)
+                        st.session_state.lista_vuelos = FabricaVuelos.instanciar_desde_dataframe(df_para_vuelos, mapeo)
+                    except Exception as e:
+                        st.error(f"Error al instanciar vuelos: {e}")
+                        return
+                st.session_state.mostrar_analisis = True
+                st.session_state.modo_limpieza_directa = True
+                st.rerun()
+
+            # Botón para eliminar el archivo físico ubicado DEBAJO de "Ir a Análisis Estadístico"
+            if st.button("🗑️ Eliminar Archivo Físico", key="btn_eliminar_archivo_limpio_header", use_container_width=True):
+                directorio_guardado = os.path.join("data", "archivos_guardados")
+                ruta_fisica = os.path.join(directorio_guardado, nombre_actual)
+                if os.path.exists(ruta_fisica):
+                    os.remove(ruta_fisica)
+                st.session_state.df_limpio = None
+                st.session_state.df_crudo = None
+                st.session_state.df_estandarizado = None
+                st.session_state.lista_vuelos = []
+                st.session_state.modo_limpieza_directa = False
+                st.session_state.mostrar_perfil = True
+                st.success(f"Archivo '{nombre_actual}' eliminado correctamente.")
+                st.rerun()
+
+        if df_norm is not None:
+            generador_reporte = ReporteCalidad(df_norm, mapeo)
+            df_reporte = generador_reporte.generar()
+            total_duplicados = AnalizadorDuplicados.contar(df_norm)
+
+            col_m1, col_m2 = st.columns(2)
+            col_m1.metric("Registros analizados", len(df_norm))
+            col_m2.metric("Registros duplicados totales", total_duplicados)
+
+            st.markdown('<h3 style="font-size: 1.4rem;">Diagnóstico de Calidad de Datos</h3>', unsafe_allow_html=True)
+            st.dataframe(df_reporte, use_container_width=True)
+
+            st.markdown('<h3 style="font-size: 1.4rem;">Vista Previa de los Datos (Primeros 50 Registros)</h3>', unsafe_allow_html=True)
+            st.dataframe(df_norm.head(50), use_container_width=True)
+
+            st.markdown('<h3 style="font-size: 1.4rem;">Descargar Dataset</h3>', unsafe_allow_html=True)
+            cols_export = [c for c in COLUMNAS_CANONICAS if c in df_norm.columns]
+            df_descarga = df_norm[cols_export] if len(cols_export) == len(COLUMNAS_CANONICAS) else df_norm
+            csv = df_descarga.to_csv(index=False).encode('utf-8')
+            st.download_button(
+                label="⬇️ Descargar Dataset Limpio (CSV)",
+                data=csv,
+                file_name=nombre_actual if nombre_actual.endswith(".csv") else f"{nombre_actual}.csv",
+                mime="text/csv",
+                use_container_width=True
+            )
+
+        return
+
     if st.session_state.get("df_crudo") is None or not st.session_state.get("contrato_validado"):
         return
 
@@ -26,6 +139,9 @@ def modulo_limpieza_y_dominio(gestor_usr):
     col_m1.metric("Registros analizados", len(df_norm))
     col_m2.metric("Registros duplicados totales", total_duplicados)
     st.dataframe(df_reporte, use_container_width=True)
+
+    st.markdown('<h4 style="font-size: 1.25rem; margin-top: 1rem;">Vista Previa de los Datos (Primeros 50 Registros)</h4>', unsafe_allow_html=True)
+    st.dataframe(df_norm.head(50), use_container_width=True)
 
     st.markdown('<h3 style="font-size: 1.4rem;">Tratamiento de Anomalías y Valores Nulos</h3>', unsafe_allow_html=True)
 
@@ -56,9 +172,9 @@ def modulo_limpieza_y_dominio(gestor_usr):
     hay_problema_id = (nulls_id > 0)
 
     # Variables de selección
-    opcion_capacidades = "No modificar"
-    opcion_precio = "No modificar (mantener nulos)"
-    opcion_id = "No autogenerar (mantener valores originales / nulos)"
+    opcion_capacidades = "Imputar por Factor de Ocupación"
+    opcion_precio = "Imputar con la media"
+    opcion_id = "Autogenerar ID automático (GEN-001, GEN-002, ...)"
 
     # =========================================================================
     # 1. CAPACIDADES (SOLO SI HAY PROBLEMAS - REQ 01 Y 02)
@@ -80,18 +196,17 @@ def modulo_limpieza_y_dominio(gestor_usr):
         opcion_capacidades = st.selectbox(
             "Tratamiento para capacidades:",
             options=[
-                "No modificar",
                 "Imputar por Factor de Ocupación",
-                "Eliminar filas"
+                f"Eliminar filas con capacidades incompletas (Pérdida: {pct_incompletas:.2f}% del dataset)"
             ],
             key="tratamiento_capacidades"
         )
 
-        if opcion_capacidades == "Eliminar filas":
+        if opcion_capacidades.startswith("Eliminar"):
             st.warning(f"⚠️ **Pérdida de datos estimada:** Se descartarán **{total_incompletas}** filas (**{pct_incompletas:.2f}%** del total del dataset) con capacidades faltantes.")
 
     # =========================================================================
-    # 2. PRECIO (SOLO SI HAY PROBLEMAS - REQ 01)
+    # 2. PRECIO (SOLO SI HAY PROBLEMAS - 4 OPCIONES OBLIGATORIAS)
     # =========================================================================
     if col_precio and col_precio in df_norm.columns and hay_problema_precio:
         st.markdown('<h4 style="font-size: 1.25rem; margin-top: 1.2rem;">Precio de Pasaje</h4>', unsafe_allow_html=True)
@@ -101,15 +216,16 @@ def modulo_limpieza_y_dominio(gestor_usr):
         opcion_precio = st.selectbox(
             f"Tratamiento para 'precio' (Columna: {col_precio}):",
             options=[
-                "No modificar (mantener nulos)", 
-                "Imputar con la mediana global", 
-                "Imputar con la mediana por grupos (país de origen y país de llegada)"
+                "Imputar con la media",
+                "Imputar con la mediana",
+                "Imputar por grupos (país de origen y destino)",
+                f"Eliminar registros con precio nulo (Pérdida: {pct_precio:.2f}% del dataset)"
             ],
             key="tratamiento_precio"
         )
 
     # =========================================================================
-    # 3. IDENTIFICADORES DE VUELO (SOLO SI HAY PROBLEMAS - REQ 01)
+    # 3. IDENTIFICADORES DE VUELO (SOLO SI HAY PROBLEMAS)
     # =========================================================================
     if col_id_real and col_id_real in df_norm.columns and hay_problema_id:
         st.markdown('<h4 style="font-size: 1.25rem; margin-top: 1.2rem;">Identificadores de Vuelo (id_vuelo)</h4>', unsafe_allow_html=True)
@@ -120,10 +236,10 @@ def modulo_limpieza_y_dominio(gestor_usr):
             f"Tratamiento para 'id_vuelo' (Columna: {col_id_real}):",
             options=[
                 "Autogenerar ID automático (GEN-001, GEN-002, ...)",
-                "No autogenerar (mantener valores originales / nulos)"
+                f"Eliminar registros sin ID de vuelo (Pérdida: {pct_id:.2f}% del dataset)"
             ],
             key="tratamiento_id_vuelo",
-            help="Asigna códigos correlativos únicos con formato GEN- a los vuelos que carecen de identificador."
+            help="Asigna códigos correlativos únicos con formato GEN- a los vuelos que carecen de identificador o elimina los registros sin ID."
         )
 
     # Mensaje si no se detectó ningún problema en los atributos configurables
@@ -158,36 +274,59 @@ def modulo_limpieza_y_dominio(gestor_usr):
 
         # 3. Tratamiento de capacidades según opción elegida (REQ-02)
         if col_cmax and col_cusada and hay_problema_capacidades:
-            if opcion_capacidades == "Imputar por Factor de Ocupación":
+            if "Imputar por Factor de Ocupación" in opcion_capacidades:
                 pipeline.agregar_paso(ImputadorCapacidadesPorFactorOcupacion(col_cmax, col_cusada, metodo="imputar"))
-            elif opcion_capacidades == "Eliminar filas":
+            elif "Eliminar" in opcion_capacidades:
                 pipeline.agregar_paso(ImputadorCapacidadesPorFactorOcupacion(col_cmax, col_cusada, metodo="eliminar"))
 
-        # 4. Autogeneración de id_vuelo si se seleccionó
-        if hay_problema_id and opcion_id.startswith("Autogenerar"):
-            col_id_target = col_id_real or "id_vuelo"
-            pipeline.agregar_paso(GeneradorIdVuelo(col_id_target, prefijo="GEN-"))
+        # 4. Autogeneración o eliminación de id_vuelo si se seleccionó
+        if hay_problema_id:
+            col_id_target = "id_vuelo"
+            if opcion_id.startswith("Autogenerar"):
+                pipeline.agregar_paso(GeneradorIdVuelo(columna=col_id_target, prefijo="GEN-"))
+            elif "Eliminar" in opcion_id:
+                pipeline.agregar_paso(EliminadorFilasNulas(col_id_target))
 
-        # 5. Imputaciones numéricas para precio
+        # 5. Tratamiento numérico para precio (4 opciones obligatorias)
         if col_precio and hay_problema_precio:
             col_orig = mapeo.get("origen") if mapeo.get("origen") != "(No asignar)" else None
             col_dest = mapeo.get("destino") if mapeo.get("destino") != "(No asignar)" else None
-            if opcion_precio == "Imputar con la mediana global":
+            if "media" in opcion_precio.lower() and "mediana" not in opcion_precio.lower():
+                pipeline.agregar_paso(ImputadorMediaGlobal(col_precio))
+            elif "mediana" in opcion_precio.lower() and "grupos" not in opcion_precio.lower():
                 pipeline.agregar_paso(ImputadorMedianaGlobal(col_precio))
-            elif opcion_precio == "Imputar con la mediana por grupos (país de origen y país de llegada)":
+            elif "grupos" in opcion_precio.lower():
                 pipeline.agregar_paso(ImputadorMedianaPorGrupo(col_precio, col_orig, col_dest))
+            elif "eliminar" in opcion_precio.lower():
+                pipeline.agregar_paso(EliminadorFilasNulas(col_precio))
 
         df_limpio = pipeline.ejecutar(df_norm)
+
+        # PRE-VALIDACIÓN: Garantizar que NINGÚN registro con precio nulo o inválido pase a la fábrica
+        col_p = mapeo.get("precio") or ("precio" if "precio" in df_limpio.columns else None)
+        if col_p and col_p in df_limpio.columns:
+            s_p = pd.to_numeric(df_limpio[col_p], errors="coerce")
+            nulos_p = s_p.isna() | (s_p < 0)
+            if nulos_p.any():
+                media_p = round(float(s_p.dropna().mean()), 2) if s_p.dropna().any() else 100.0
+                df_limpio[col_p] = s_p.fillna(media_p)
+
+        # FILTRADO ESTRICTO: Garantizar que df_limpio contenga ÚNICAMENTE las 13 columnas canónicas limpias
+        for col_c in COLUMNAS_CANONICAS:
+            if col_c not in df_limpio.columns:
+                df_limpio[col_c] = None
+        df_limpio = df_limpio[COLUMNAS_CANONICAS].copy()
 
         # Instanciación estricta a objetos Vuelo (REQ: precio obligatorio)
         try:
             lista_vuelos = FabricaVuelos.instanciar_desde_dataframe(df_limpio, st.session_state.mapeo_columnas)
             st.session_state.df_limpio = df_limpio
             st.session_state.lista_vuelos = lista_vuelos
+            st.session_state.pipeline_ejecutado_recientemente = True
             st.success(f"¡Pipeline ejecutado! Se instanciaron con éxito {len(lista_vuelos)} objetos Vuelo.")
         except ValueError as e:
             st.error(f"❌ Error en la instanciación de objetos Vuelo: {e}")
-            st.warning("El atributo 'precio' es estrictamente obligatorio para todos los vuelos. Asegúrese de imputar los precios faltantes antes de continuar.")
+            st.warning("El atributo 'precio' es estrictamente obligatorio para todos los vuelos.")
             return
 
         if st.session_state.usuario_activo:
@@ -199,7 +338,6 @@ def modulo_limpieza_y_dominio(gestor_usr):
                 nombre_base = nombre_base[:-4]
             nombre_limpio = f"{nombre_base}_limpio.csv"
             
-            import os
             directorio_guardado = os.path.join("data", "archivos_guardados")
             os.makedirs(directorio_guardado, exist_ok=True)
             ruta_limpio = os.path.join(directorio_guardado, nombre_limpio)
@@ -233,7 +371,8 @@ def modulo_limpieza_y_dominio(gestor_usr):
             gestor_usr.guardar_usuario(usuario)
             st.sidebar.success("Sesión y cambios guardados en su perfil.")
 
-    if st.session_state.get("df_limpio") is not None:
+    # Solo mostrar descarga y pase a análisis SI se acaba de ejecutar el pipeline exitosamente
+    if st.session_state.get("pipeline_ejecutado_recientemente", False) and st.session_state.get("df_limpio") is not None:
         st.markdown('<h3 style="font-size: 1.4rem;">Descargar Resultados</h3>', unsafe_allow_html=True)
         csv = st.session_state.df_limpio.to_csv(index=False).encode('utf-8')
         
