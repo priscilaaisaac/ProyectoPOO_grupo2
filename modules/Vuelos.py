@@ -52,10 +52,6 @@ class Vuelo:
         self.capacidad_maxima_avion = int(capacidad_maxima_avion)
         self.capacidad_usada_avion = int(capacidad_usada_avion)
 
-    # ----------------------------------------------------------------------
-    # Cálculos Autónomos de Duración (REQ-06)
-    # ----------------------------------------------------------------------
-
     def calcular_duracion_estipulada_minutos(self) -> float:
         """Calcula la duración programada del vuelo en minutos."""
         if not self.fechayhora_destino_estipulado or not self.fechayhora_origen_estipulado:
@@ -69,10 +65,6 @@ class Vuelo:
             return None
         diferencia = self.fechayhora_destino - self.fechayhora_origen
         return max(0.0, diferencia.total_seconds() / 60.0)
-
-    # ----------------------------------------------------------------------
-    # Cálculos Autónomos de Retraso (REQ-06)
-    # ----------------------------------------------------------------------
 
     def calcular_retraso_salida_minutos(self) -> float:
         """
@@ -158,15 +150,22 @@ class Vuelo:
         """Estandariza el texto del estado del vuelo a los valores canónicos."""
         if not self.estado:
             return "Desconocido"
+
         txt = str(self.estado).strip().lower()
-        if "atrasad" in txt:
-            return "Atrasado"
-        elif "a tiempo" in txt:
-            return "A tiempo"
-        elif "exitos" in txt:
-            return "Exitoso"
-        elif "cancelad" in txt:
-            return "Cancelado"
+
+        # Diccionario con fragmentos, errores tipográficos y términos en inglés
+        mapa_estados = {
+            "Atrasado": ("atras", "retras", "demor", "tard", "delay", "late"),
+            "A tiempo": ("a tiempo", "a_tiempo", "atiempo", "on time", "ontime", "en horario", "puntual"),
+            "Exitoso":  ("exitos", "complet", "realizad", "success", "land", "aterriz"),
+            "Cancelado": ("cancel", "anulad", "suspend", "abort", "cancell")
+        }
+
+        # Busca si alguna de las palabras clave existe dentro del texto del estado
+        for estado_canonico, palabras_clave in mapa_estados.items():
+            if any(palabra in txt for palabra in palabras_clave):
+                return estado_canonico
+
         return "Desconocido"
 
     def __repr__(self) -> str:

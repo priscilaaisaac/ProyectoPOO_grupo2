@@ -154,23 +154,17 @@ class MotorEstadisticoVuelos:
         muestra = self.filtrar_vuelos(ruta, franja, ocupacion)
         n = len(muestra)
         if n == 0:
-            # Si el cruce no tiene registros suficientes, se recurre a la probabilidad marginal
-            marg = self.calcular_probabilidades_marginales()
-            precio_global = sum(v.precio for v in self.vuelos) / self.total_vuelos
-            ocup_global = sum(v.calcular_factor_ocupacion() for v in self.vuelos) / self.total_vuelos
-            cap_media = int(sum(v.capacidad_maxima_avion for v in self.vuelos) / self.total_vuelos)
-            usada_media = int(sum(v.capacidad_usada_avion for v in self.vuelos) / self.total_vuelos)
             return {
                 "muestra_tamano": 0,
                 "es_estimacion_global": True,
-                "p_atrasado": marg.get("Atrasado", 0.0),
-                "p_cancelado": marg.get("Cancelado", 0.0),
-                "p_atiempo": marg.get("A tiempo", 0.0),
-                "p_exitoso": marg.get("Exitoso", 0.0),
-                "precio_promedio": precio_global,
-                "ocupacion_promedio": ocup_global,
-                "capacidad_maxima_media": cap_media,
-                "capacidad_usada_media": usada_media
+                "p_atrasado": 0.0,
+                "p_cancelado": 0.0,
+                "p_atiempo": 0.0,
+                "p_exitoso": 0.0,
+                "precio_promedio": 0.0,
+                "ocupacion_promedio": 0.0,
+                "capacidad_maxima_media": 0,
+                "capacidad_usada_media": 0
             }
 
         conteos = {}

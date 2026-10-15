@@ -351,77 +351,81 @@ def vista_analisis_estadistico(gestor_usr=None):
             margen_comercial_pct=margen_comercial
         )
 
-        # Métricas de salida en tarjetas visuales de alto impacto
-        col_m1, col_m2, col_m3, col_m4, col_m5 = st.columns(5)
-        with col_m1:
-            st.metric("Precio Base", f"${resultado_sim['precio_base']:,.2f}", help=resultado_sim['tipo_precio_base'])
-        with col_m2:
-            st.metric("P(Atraso)", f"{resultado_sim['p_atrasado_pct']}%", help="Probabilidad condicionada de retraso")
-        with col_m3:
-            st.metric("P(Cancelación)", f"{resultado_sim['p_cancelado_pct']}%", help="Probabilidad condicionada de cancelación")
-        with col_m4:
-            st.metric("Riesgo Logístico", f"{resultado_sim['riesgo_logistico_pct']}%", delta=f"+${resultado_sim['recargo_riesgo_monetario']:,.2f}")
-        with col_m5:
-            st.metric(
-                "✨ Precio Dinámico Sugerido",
-                f"${resultado_sim['precio_sugerido']:,.2f}",
-                delta=f"+{resultado_sim['ajuste_porcentual_total']}% (${resultado_sim['ajuste_total_monetario']:,.2f})"
+        # Renderizado condicional según disponibilidad de muestra
+        if resultado_sim.get("muestra_tamano", 0) > 0:
+            # Métricas de salida en tarjetas visuales de alto impacto
+            col_m1, col_m2, col_m3, col_m4, col_m5 = st.columns(5)
+            with col_m1:
+                st.metric("Precio Base", f"${resultado_sim['precio_base']:,.2f}", help=resultado_sim['tipo_precio_base'])
+            with col_m2:
+                st.metric("P(Atraso)", f"{resultado_sim['p_atrasado_pct']}%", help="Probabilidad condicionada de retraso")
+            with col_m3:
+                st.metric("P(Cancelación)", f"{resultado_sim['p_cancelado_pct']}%", help="Probabilidad condicionada de cancelación")
+            with col_m4:
+                st.metric("Riesgo Logístico", f"{resultado_sim['riesgo_logistico_pct']}%", delta=f"+${resultado_sim['recargo_riesgo_monetario']:,.2f}")
+            with col_m5:
+                st.metric(
+                    "✨ Precio Dinámico Sugerido",
+                    f"${resultado_sim['precio_sugerido']:,.2f}",
+                    delta=f"+{resultado_sim['ajuste_porcentual_total']}% (${resultado_sim['ajuste_total_monetario']:,.2f})"
+                )
+
+            # Diagnóstico Comercial con formato de moneda limpio y seguro contra KaTeX
+            st.info(
+                f"💡 **Diagnóstico Comercial:** Para el segmento seleccionado "
+                f"(Muestra: {resultado_sim['muestra_tamano']} vuelos), "
+                f"el modelo detecta un riesgo operativo del **{resultado_sim['riesgo_logistico_pct']}%** "
+                f"(P(Atraso)={resultado_sim['p_atrasado_pct']}%, P(Cancelación)={resultado_sim['p_cancelado_pct']}%). "
+                f"El precio dinámico sugerido de **\\${resultado_sim['precio_sugerido']:,.2f}** incluye un recargo de "
+                f"cobertura de **\\${resultado_sim['recargo_riesgo_monetario']:,.2f}** por pasaje, generando un fondo de contingencia "
+                f"estimado de **\\${resultado_sim['fondo_contingencia_vuelo']:,.2f}** por vuelo para absorber ineficiencias logísticas "
+                f"e indemnizaciones."
             )
 
-        # Diagnóstico Comercial con formato de moneda limpio y seguro contra KaTeX
-        st.info(
-            f"💡 **Diagnóstico Comercial:** Para el segmento seleccionado "
-            f"(Muestra: {resultado_sim['muestra_tamano']} vuelos), "
-            f"el modelo detecta un riesgo operativo del **{resultado_sim['riesgo_logistico_pct']}%** "
-            f"(P(Atraso)={resultado_sim['p_atrasado_pct']}%, P(Cancelación)={resultado_sim['p_cancelado_pct']}%). "
-            f"El precio dinámico sugerido de **\\${resultado_sim['precio_sugerido']:,.2f}** incluye un recargo de "
-            f"cobertura de **\\${resultado_sim['recargo_riesgo_monetario']:,.2f}** por pasaje, generando un fondo de contingencia "
-            f"estimado de **\\${resultado_sim['fondo_contingencia_vuelo']:,.2f}** por vuelo para absorber ineficiencias logísticas "
-            f"e indemnizaciones."
-        )
+            # ------------------------------------------------------------------
+            # Botón Explícito de Guardado de Simulación (Patrón Command)
+            # ------------------------------------------------------------------
+            col_btn_sim, col_espacio_sim = st.columns([0.35, 0.65])
+            with col_btn_sim:
+                if st.button("💾 Guardar Simulación", key="btn_guardar_simulacion", use_container_width=True):
+                    # Obtener el nombre real y limpio del archivo activo
+                    nombre_real = st.session_state.get("nombre_archivo_actual")
+                    if not nombre_real or str(nombre_real).strip() in ["", "None", "Dataset Activo", "Archivo desconocido"]:
+                        nombre_real = "dataset_vuelos.csv"
+                    else:
+                        nombre_real = str(nombre_real).strip()
 
-        # ------------------------------------------------------------------
-        # Botón Explícito de Guardado de Simulación (Patrón Command)
-        # ------------------------------------------------------------------
-        col_btn_sim, col_espacio_sim = st.columns([0.35, 0.65])
-        with col_btn_sim:
-            if st.button("💾 Guardar Simulación", key="btn_guardar_simulacion", use_container_width=True):
-                # Obtener el nombre real y limpio del archivo activo
-                nombre_real = st.session_state.get("nombre_archivo_actual")
-                if not nombre_real or str(nombre_real).strip() in ["", "None", "Dataset Activo", "Archivo desconocido"]:
-                    nombre_real = "dataset_vuelos.csv"
-                else:
-                    nombre_real = str(nombre_real).strip()
+                    # 1. Registro en la sesión persistente del usuario (si está autenticado)
+                    usr = st.session_state.get("usuario_activo")
+                    desc_sim = f"Simulación en ruta {resultado_sim['ruta']} | Precio sugerido: ${resultado_sim['precio_sugerido']:,.2f}"
+                    if usr and gestor_usr:
+                        usr.sesion.registrar_comando(
+                            accion=desc_sim,
+                            parametros={
+                                "tipo_operacion": "SimulacionComercial",
+                                "archivos": nombre_real,
+                                "archivo": nombre_real,
+                                "ruta": resultado_sim["ruta"],
+                                "franja": resultado_sim["franja"],
+                                "ocupacion": resultado_sim["ocupacion"],
+                                "precio_base": resultado_sim["precio_base"],
+                                "precio_sugerido": resultado_sim["precio_sugerido"],
+                                "riesgo_logistico_pct": resultado_sim["riesgo_logistico_pct"],
+                                "fondo_contingencia_vuelo": resultado_sim["fondo_contingencia_vuelo"]
+                            }
+                        )
+                        gestor_usr.guardar_usuario(usr)
 
-                # 1. Registro en la sesión persistente del usuario (si está autenticado)
-                usr = st.session_state.get("usuario_activo")
-                desc_sim = f"Simulación en ruta {resultado_sim['ruta']} | Precio sugerido: ${resultado_sim['precio_sugerido']:,.2f}"
-                if usr and gestor_usr:
-                    usr.sesion.registrar_comando(
-                        accion=desc_sim,
-                        parametros={
-                            "tipo_operacion": "SimulacionComercial",
-                            "archivos": nombre_real,
-                            "archivo": nombre_real,
-                            "ruta": resultado_sim["ruta"],
-                            "franja": resultado_sim["franja"],
-                            "ocupacion": resultado_sim["ocupacion"],
-                            "precio_base": resultado_sim["precio_base"],
-                            "precio_sugerido": resultado_sim["precio_sugerido"],
-                            "riesgo_logistico_pct": resultado_sim["riesgo_logistico_pct"],
-                            "fondo_contingencia_vuelo": resultado_sim["fondo_contingencia_vuelo"]
-                        }
+                    # 2. Registro en la lista aislada de este archivo para exportación PDF
+                    elementos_guardados["simulaciones"].append(resultado_sim.copy())
+
+                    # Mensaje de confirmación estructurado con punto y aparte
+                    st.success(
+                        f"✅ Simulación en ruta **{resultado_sim['ruta']}** | Precio sugerido: **\\${resultado_sim['precio_sugerido']:,.2f}**.\n\n"
+                        f"Guardada exitosamente en el historial y en el informe PDF."
                     )
-                    gestor_usr.guardar_usuario(usr)
-
-                # 2. Registro en la lista aislada de este archivo para exportación PDF
-                elementos_guardados["simulaciones"].append(resultado_sim.copy())
-
-                # Mensaje de confirmación estructurado con punto y aparte
-                st.success(
-                    f"✅ Simulación en ruta **{resultado_sim['ruta']}** | Precio sugerido: **\\${resultado_sim['precio_sugerido']:,.2f}**.\n\n"
-                    f"Guardada exitosamente en el historial y en el informe PDF."
-                )
+        else:
+            st.warning("⚠️ No es posible encontrar registros previos para calcular las proyecciones con estas características.")
 
     # ======================================================================
     # SECCIÓN 2:
