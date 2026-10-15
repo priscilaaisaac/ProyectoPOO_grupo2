@@ -60,136 +60,98 @@ def modulo_validacion():
     if not st.session_state.get("archivos_procesados", False) or st.session_state.get("df_crudo_completo") is None:
         return
 
-    archivos_dfs = st.session_state.get("archivos_dfs", {})
-    if not archivos_dfs:
-        if st.session_state.get("df_crudo_completo") is not None:
-            archivos_dfs = {"dataset_cargado": st.session_state.df_crudo_completo}
-        else:
-            return
+    columnas_usuario = st.session_state.get("columnas_disponibles", [])
+    if not columnas_usuario:
+        return
 
     st.divider()
     st.markdown('<h3 style="font-size: 1.4rem;">Seleccione variables a analizar</h3>', unsafe_allow_html=True)
+    mapeo_columnas = {}
+    columnas_disponibles_mapeo = columnas_usuario
 
-    es_multifile = len(archivos_dfs) > 1
-    if es_multifile:
-        st.info(
-            f"Se cargaron **{len(archivos_dfs)} archivos**. Configure a continuación la asignación de columnas para cada uno. "
-            "Esto permite consolidar archivos aunque tengan encabezados de columnas con nombres distintos (ej. 'aero_orig' vs 'aeropuerto_salida')."
-        )
+    # Detectar si cambiaron las columnas disponibles para resetear mapeos previos
+    ultimas_cols = st.session_state.get("ultimas_cols_validacion", [])
+    if set(ultimas_cols) != set(columnas_disponibles_mapeo):
+        st.session_state.ultimas_cols_validacion = list(columnas_disponibles_mapeo)
+        for prefijo, lista_atributos in [("req_", ATRIBUTOS_REQUERIDOS), ("opc_", ATRIBUTOS_OPCIONALES)]:
+            for attr in lista_atributos:
+                st.session_state.pop(f"{prefijo}{attr}", None)
 
-    mapeos_por_archivo = {}
+    # 1. Identificar columnas ya seleccionadas válidas
+    seleccionados_global = []
+    for prefijo, lista_atributos in [("req_", ATRIBUTOS_REQUERIDOS), ("opc_", ATRIBUTOS_OPCIONALES)]:
+        for attr in lista_atributos:
+            key = f"{prefijo}{attr}"
+            val = st.session_state.get(key)
+            if val and val != "(No asignar)" and val in columnas_disponibles_mapeo:
+                seleccionados_global.append(val)
 
-    if es_multifile:
-        tabs = st.tabs([f"📄 {nombre}" for nombre in archivos_dfs.keys()])
-        for i, (nombre_archivo, df_archivo) in enumerate(archivos_dfs.items()):
-            with tabs[i]:
-                st.markdown(f"**Asignación de columnas para `{nombre_archivo}`:**")
-                mapeo_f = {}
-                col1, col2 = st.columns(2)
-                cols_archivo = list(df_archivo.columns)
+    # 2. Autodetectar columnas para atributos aún no definidos en session_state
+    for prefijo, lista_atributos in [("req_", ATRIBUTOS_REQUERIDOS), ("opc_", ATRIBUTOS_OPCIONALES)]:
+        for attr in lista_atributos:
+            key = f"{prefijo}{attr}"
+            if key not in st.session_state or (st.session_state[key] != "(No asignar)" and st.session_state[key] not in columnas_disponibles_mapeo):
+                disponibles_para_sug = [c for c in columnas_disponibles_mapeo if c not in seleccionados_global]
+                sugerencia = _auto_detectar_columna(attr, disponibles_para_sug)
+                st.session_state[key] = sugerencia
+                if sugerencia != "(No asignar)":
+                    seleccionados_global.append(sugerencia)
 
-                with col1:
-                    st.markdown("**Variables Críticas (Obligatorias)**")
-                    for atributo in ATRIBUTOS_REQUERIDOS:
-                        key = f"map_{nombre_archivo}_req_{atributo}"
-                        sugerencia = _auto_detectar_columna(atributo, cols_archivo)
-                        idx_def = cols_archivo.index(sugerencia) + 1 if sugerencia in cols_archivo else 0
-                        opc = ["(No asignar)"] + cols_archivo
-                        mapeo_f[atributo] = st.selectbox(
-                            f"Asignar a '{atributo}':",
-                            options=opc,
-                            index=idx_def,
-                            format_func=formatear_opcion_con_archivo,
-                            key=key
-                        )
+    col1, col2 = st.columns(2)
+    with col1:
+        st.markdown("**Variables Críticas (Obligatorias)**")
+        for atributo in ATRIBUTOS_REQUERIDOS:
+            key = f"req_{atributo}"
+            valor_actual = st.session_state.get(key, "(No asignar)")
+            opc_filtradas = ["(No asignar)"] + [col for col in columnas_disponibles_mapeo if col not in seleccionados_global or col == valor_actual]
+            idx_def = opc_filtradas.index(valor_actual) if valor_actual in opc_filtradas else 0
+            mapeo_columnas[atributo] = st.selectbox(
+                f"Asignar a '{atributo}':",
+                options=opc_filtradas,
+                index=idx_def,
+                format_func=formatear_opcion_con_archivo,
+                key=key
+            )
 
-                with col2:
-                    st.markdown("**Variables Opcionales**")
-                    for atributo in ATRIBUTOS_OPCIONALES:
-                        key = f"map_{nombre_archivo}_opc_{atributo}"
-                        sugerencia = _auto_detectar_columna(atributo, cols_archivo)
-                        idx_def = cols_archivo.index(sugerencia) + 1 if sugerencia in cols_archivo else 0
-                        opc = ["(No asignar)"] + cols_archivo
-                        mapeo_f[atributo] = st.selectbox(
-                            f"Asignar a '{atributo}':",
-                            options=opc,
-                            index=idx_def,
-                            format_func=formatear_opcion_con_archivo,
-                            key=key
-                        )
-
-                mapeos_por_archivo[nombre_archivo] = mapeo_f
-    else:
-        nombre_unico = list(archivos_dfs.keys())[0]
-        df_unico = archivos_dfs[nombre_unico]
-        cols_archivo = list(df_unico.columns)
-        mapeo_f = {}
-
-        col1, col2 = st.columns(2)
-        with col1:
-            st.markdown("**Variables Críticas (Obligatorias)**")
-            for atributo in ATRIBUTOS_REQUERIDOS:
-                key = f"single_req_{atributo}"
-                sugerencia = _auto_detectar_columna(atributo, cols_archivo)
-                idx_def = cols_archivo.index(sugerencia) + 1 if sugerencia in cols_archivo else 0
-                opc = ["(No asignar)"] + cols_archivo
-                mapeo_f[atributo] = st.selectbox(
-                    f"Asignar a '{atributo}':",
-                    options=opc,
-                    index=idx_def,
-                    format_func=formatear_opcion_con_archivo,
-                    key=key
-                )
-
-        with col2:
-            st.markdown("**Variables Opcionales**")
-            for atributo in ATRIBUTOS_OPCIONALES:
-                key = f"single_opc_{atributo}"
-                sugerencia = _auto_detectar_columna(atributo, cols_archivo)
-                idx_def = cols_archivo.index(sugerencia) + 1 if sugerencia in cols_archivo else 0
-                opc = ["(No asignar)"] + cols_archivo
-                mapeo_f[atributo] = st.selectbox(
-                    f"Asignar a '{atributo}':",
-                    options=opc,
-                    index=idx_def,
-                    format_func=formatear_opcion_con_archivo,
-                    key=key
-                )
-
-        mapeos_por_archivo[nombre_unico] = mapeo_f
+    with col2:
+        st.markdown("**Variables Opcionales**")
+        for atributo in ATRIBUTOS_OPCIONALES:
+            key = f"opc_{atributo}"
+            valor_actual = st.session_state.get(key, "(No asignar)")
+            opc_filtradas = ["(No asignar)"] + [col for col in columnas_disponibles_mapeo if col not in seleccionados_global or col == valor_actual]
+            idx_def = opc_filtradas.index(valor_actual) if valor_actual in opc_filtradas else 0
+            mapeo_columnas[atributo] = st.selectbox(
+                f"Asignar a '{atributo}':",
+                options=opc_filtradas,
+                index=idx_def,
+                format_func=formatear_opcion_con_archivo,
+                key=key
+            )
 
     st.markdown('<h3 style="font-size: 1.4rem;">Guardar y Continuar</h3>', unsafe_allow_html=True)
     nombre_archivo_nuevo = st.text_input("Nombre para el nuevo archivo unificado (sin extensión):", "dataset_vuelos_unificado")
 
     if st.button("Validar Contrato y Continuar"):
-        # REGLA 1: RESTRICCIÓN ABSOLUTA DE "(No asignar)" CON VALIDACIÓN INMEDIATA
-        incompletos = {}
-        for nombre_f, map_f in mapeos_por_archivo.items():
-            sin_asig = [
-                attr for attr in ATRIBUTOS_REQUERIDOS
-                if not map_f.get(attr) or map_f.get(attr) == "(No asignar)"
-            ]
-            if sin_asig:
-                incompletos[nombre_f] = sin_asig
-
-        if incompletos:
-            for n_f, s_asig in incompletos.items():
-                st.error(
-                    f"⚠️ **Asignación obligatoria incompleta en '{n_f}':** "
-                    f"Ningún atributo obligatorio puede quedar como '(No asignar)'. "
-                    f"Debe asignar obligatoriamente: **{', '.join(s_asig)}**."
-                )
+        # REGLA: RESTRICCIÓN ABSOLUTA DE "(No asignar)" CON VALIDACIÓN INMEDIATA
+        sin_asignar = [
+            attr for attr in ATRIBUTOS_REQUERIDOS
+            if not mapeo_columnas.get(attr) or mapeo_columnas.get(attr) == "(No asignar)"
+        ]
+        if sin_asignar:
+            st.error(
+                f"⚠️ **Asignación obligatoria incompleta:** "
+                f"Ningún atributo obligatorio puede quedar como '(No asignar)'. "
+                f"Debe asignar obligatoriamente: **{', '.join(sin_asignar)}**."
+            )
             st.session_state.contrato_validado = False
             return
 
         try:
-            import os
-            # Validar contrato en cada archivo
-            for nombre_f, df_f in archivos_dfs.items():
-                map_f = mapeos_por_archivo[nombre_f]
-                validador = ValidadorEsquema(df=df_f, mapeo=map_f, requeridos=ATRIBUTOS_REQUERIDOS)
-                validador.validar()
+            df_completo = st.session_state.df_crudo_completo.copy()
+            validador = ValidadorEsquema(df=df_completo, mapeo=mapeo_columnas, requeridos=ATRIBUTOS_REQUERIDOS)
+            resultado_validacion = validador.validar()
 
+            import os
             directorio_guardado = os.path.join("data", "archivos_guardados")
             os.makedirs(directorio_guardado, exist_ok=True)
 
@@ -200,20 +162,25 @@ def modulo_validacion():
                     with open(ruta_crudo, "wb") as f:
                         f.write(archivo.getvalue())
 
-            # Construir dataset unificado con exactamente las 13 columnas canónicas limpias
-            dfs_canonicos = []
-            for nombre_f, df_f in archivos_dfs.items():
-                map_f = mapeos_por_archivo[nombre_f]
-                df_canon = pd.DataFrame(index=df_f.index)
-                for col_c in COLUMNAS_CANONICAS:
-                    col_src = map_f.get(col_c)
-                    if col_src and col_src != "(No asignar)" and col_src in df_f.columns:
-                        df_canon[col_c] = df_f[col_src].values
-                    else:
-                        df_canon[col_c] = None
-                dfs_canonicos.append(df_canon[COLUMNAS_CANONICAS])
+            # Construir df_unificado conteniendo ÚNICAMENTE las 13 columnas canónicas limpias
+            df_unificado = pd.DataFrame(index=df_completo.index)
+            origen_map = st.session_state.get("origen_por_columna", {})
+            for col_canon in COLUMNAS_CANONICAS:
+                col_src = mapeo_columnas.get(col_canon)
+                if col_src and col_src != "(No asignar)" and col_src in df_completo.columns:
+                    serie = df_completo[col_src].copy()
+                    info_src = origen_map.get(col_src)
+                    if info_src and serie.isna().any():
+                        orig_name = info_src if isinstance(info_src, str) else info_src.get("nombre_original")
+                        for otra_col, info_otra in origen_map.items():
+                            otra_name = info_otra if isinstance(info_otra, str) else info_otra.get("nombre_original")
+                            if otra_col != col_src and otra_name == orig_name and otra_col in df_completo.columns:
+                                serie = serie.combine_first(df_completo[otra_col])
+                    df_unificado[col_canon] = serie.values
+                else:
+                    df_unificado[col_canon] = None
 
-            df_unificado = pd.concat(dfs_canonicos, axis=0, ignore_index=True)
+            # Garantizar orden canónico exacto
             df_unificado = df_unificado[COLUMNAS_CANONICAS].copy()
 
             ruta_unificado = os.path.join(directorio_guardado, f"{nombre_archivo_nuevo}.csv")
@@ -226,13 +193,10 @@ def modulo_validacion():
             st.session_state.contrato_validado = True
             st.session_state.df_estandarizado = EstandarizadorDatos.normalizar(df_unificado)
 
-            st.success(
-                f"✅ ¡Contrato validado exitosamente! Se unificaron {len(dfs_canonicos)} archivo(s) "
-                f"bajo las 13 columnas canónicas limpias. Guardado en '{nombre_archivo_nuevo}.csv'."
-            )
+            st.success(f"{resultado_validacion} Archivos guardados exitosamente. Puedes verlos en la sección 'Ver mi Perfil y Archivos Guardados'.")
         except ValueError as ve:
             st.session_state.contrato_validado = False
             st.error(f"Error de Contrato: {ve}")
         except Exception as e:
             st.session_state.contrato_validado = False
-            st.error(f"Error crítico al validar contrato: {e}")
+            st.error(f"Error crítico: {e}")

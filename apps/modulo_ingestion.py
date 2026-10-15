@@ -10,6 +10,50 @@ except ModuleNotFoundError:
 import pandas as pd
 from modules.lector_datos import FactoryLectorDatos
 
+
+def _limpiar_estado_ingestion():
+    """Restablece el estado de ingestión de archivos."""
+    st.session_state.archivos_procesados = False
+    st.session_state.df_crudo_completo = None
+    st.session_state.columnas_disponibles = []
+    st.session_state.origen_por_columna = {}
+    st.session_state.archivos_crudos_temporales = []
+    st.session_state.archivos_dfs = {}
+
+
+def _consolidar_archivos_en_estado(archivos) -> bool:
+    """Consolida la lista de archivos activos y actualiza el session_state."""
+    if not archivos:
+        _limpiar_estado_ingestion()
+        return False
+
+    try:
+        lector = FactoryLectorDatos.obtener_lector_por_archivo(archivos)
+        df_consolidado = lector.leer(origen=archivos)
+
+        if df_consolidado.empty or len(df_consolidado.columns) < 1:
+            st.error("Los archivos subidos están vacíos o no contienen columnas válidas.")
+            _limpiar_estado_ingestion()
+            return False
+
+        columnas = list(df_consolidado.columns)
+        origen_map = getattr(lector, 'origen_por_columna', {}) or df_consolidado.attrs.get('origen_por_columna', {})
+        if not origen_map:
+            origen_map = {col: (archivos[0].name if archivos else "Consolidado") for col in columnas}
+
+        st.session_state.df_crudo_completo = df_consolidado
+        st.session_state.columnas_disponibles = columnas
+        st.session_state.origen_por_columna = origen_map
+        st.session_state.archivos_dfs = {"dataset_consolidado": df_consolidado}
+        st.session_state.archivos_crudos_temporales = archivos
+        st.session_state.archivos_procesados = True
+        return True
+    except Exception as e:
+        st.error(f"Error al procesar archivos: {e}")
+        _limpiar_estado_ingestion()
+        return False
+
+
 def modulo_ingestion():
     st.markdown('<h1 style="font-size: 2.25rem;">Carga de datos</h1>', unsafe_allow_html=True)
     st.write("Selecciona tu origen de datos y mapea las columnas con el esquema del sistema.")
@@ -18,19 +62,11 @@ def modulo_ingestion():
     with col_btn1:
         if st.button("Subir archivo local", use_container_width=True):
             st.session_state.origen_datos = "CSV"
-            st.session_state.df_crudo_completo = None
-            st.session_state.columnas_disponibles = []
-            st.session_state.origen_por_columna = {}
-            st.session_state.archivos_dfs = {}
-            st.session_state.archivos_procesados = False
+            _limpiar_estado_ingestion()
     with col_btn2:
         if st.button("Conectar base SQL", use_container_width=True):
             st.session_state.origen_datos = "SQL"
-            st.session_state.df_crudo_completo = None
-            st.session_state.columnas_disponibles = []
-            st.session_state.origen_por_columna = {}
-            st.session_state.archivos_dfs = {}
-            st.session_state.archivos_procesados = False
+            _limpiar_estado_ingestion()
 
     st.divider()
 
@@ -39,71 +75,58 @@ def modulo_ingestion():
         st.info("Puede subir uno o varios archivos (.csv, .txt, .xlsx, .xltx, .xltm). Los archivos se consolidarán automáticamente en un único DataFrame.")
         st.markdown("""
         <style>
-            [data-testid="stFileUploadDropzone"] small,
-            [data-testid="stFileUploaderDropzone"] small,
-            [data-testid="stFileUploaderDropzoneInstructions"],
-            div[data-testid="stFileUploaderDropzoneInstructions"],
-            section[data-testid="stFileUploadDropzone"] small,
-            section[data-testid="stFileUploaderDropzone"] small {
+            [data-testid="stFileUploaderDropzoneInstructions"] {
                 display: none !important;
+            }
+            /* La cruz (X) en cada archivo del bloque de carga se muestra al pasar el mouse por encima (hover) */
+            [data-testid="stFileChip"] [data-testid="stFileChipDeleteBtn"],
+            .stFileChip [data-testid="stFileChipDeleteBtn"] {
+                opacity: 0 !important;
+                visibility: hidden !important;
+                transition: opacity 0.2s ease-in-out, visibility 0.2s ease-in-out !important;
+            }
+            [data-testid="stFileChip"]:hover [data-testid="stFileChipDeleteBtn"],
+            .stFileChip:hover [data-testid="stFileChipDeleteBtn"] {
+                opacity: 1 !important;
+                visibility: visible !important;
+            }
+            [data-testid="stFileChipDeleteBtn"] button:hover {
+                color: #ff4b4b !important;
             }
         </style>
         """, unsafe_allow_html=True)
-        archivos_subidos = st.file_uploader("Selecciona uno o más archivos", type=["csv", "txt", "xlsx", "xltx", "xltm"], accept_multiple_files=True)
+
+        archivos_subidos = st.file_uploader(
+            "Selecciona uno o más archivos",
+            type=["csv", "txt", "xlsx", "xltx", "xltm"],
+            accept_multiple_files=True
+        )
 
         if archivos_subidos:
-            # 1. Evitar carga automática: requerir botón 'Continuar'
             nombres_actuales = [a.name for a in archivos_subidos]
-            if st.session_state.get("archivos_subidos_previos") != nombres_actuales:
-                st.session_state.archivos_procesados = False
+            archivos_previos = st.session_state.get("archivos_subidos_previos", [])
+
+            # Si la lista de archivos cambió (por ejemplo al eliminar con la cruz del chip)
+            if archivos_previos != nombres_actuales:
                 st.session_state.archivos_subidos_previos = nombres_actuales
-
-            if st.button("Continuar", key="btn_continuar_csv", use_container_width=True):
-                try:
-                    lector = FactoryLectorDatos.obtener_lector_por_archivo(archivos_subidos)
-                    df_consolidado = lector.leer(origen=archivos_subidos)
-
-                    if df_consolidado.empty or len(df_consolidado.columns) < 1:
-                        st.error("Los archivos subidos están vacíos o no contienen columnas válidas.")
-                        st.session_state.archivos_procesados = False
-                        st.session_state.df_crudo_completo = None
-                        st.session_state.columnas_disponibles = []
-                        st.session_state.origen_por_columna = {}
-                        st.session_state.archivos_dfs = {}
-                    else:
-                        columnas = list(df_consolidado.columns)
-                        origen_map = getattr(lector, 'origen_por_columna', {}) or df_consolidado.attrs.get('origen_por_columna', {})
-                        if not origen_map:
-                            origen_map = {col: (archivos_subidos[0].name if archivos_subidos else "Consolidado") for col in columnas}
-
-                        st.session_state.df_crudo_completo = df_consolidado
-                        st.session_state.columnas_disponibles = columnas
-                        st.session_state.origen_por_columna = origen_map
-                        st.session_state.archivos_dfs = {"dataset_consolidado": df_consolidado}
-                        st.session_state.archivos_crudos_temporales = archivos_subidos
-                        st.session_state.archivos_procesados = True
-                        st.success(f"Se cargaron y consolidaron {len(archivos_subidos)} archivo(s) exitosamente. Ya puede mapear los atributos abajo.")
-                except Exception as e:
-                    st.error(f"Error al procesar archivos: {e}")
+                if st.session_state.get("archivos_procesados", False):
+                    _consolidar_archivos_en_estado(archivos_subidos)
+                else:
                     st.session_state.archivos_procesados = False
-                    st.session_state.df_crudo_completo = None
-                    st.session_state.columnas_disponibles = []
-                    st.session_state.origen_por_columna = {}
-                    st.session_state.archivos_dfs = {}
 
-            # Mostrar vista previa únicamente tras presionar 'Continuar'
+            if not st.session_state.get("archivos_procesados", False):
+                if st.button("Continuar", key="btn_continuar_csv", use_container_width=True):
+                    if _consolidar_archivos_en_estado(archivos_subidos):
+                        st.success(f"Se cargaron y consolidaron {len(archivos_subidos)} archivo(s) exitosamente. Ya puede mapear los atributos abajo.")
+                        st.rerun()
+
+            # Mostrar vista previa únicamente tras presionar 'Continuar' / consolidar
             if st.session_state.get("archivos_procesados", False) and st.session_state.get("df_crudo_completo") is not None:
                 st.markdown("**Vista previa de los datos consolidados:**")
                 st.dataframe(st.session_state.df_crudo_completo.head(10), use_container_width=True)
         else:
-            # Limpiar el estado si se eliminan todos los archivos
-            st.session_state.archivos_procesados = False
+            _limpiar_estado_ingestion()
             st.session_state.archivos_subidos_previos = []
-            st.session_state.df_crudo_completo = None
-            st.session_state.columnas_disponibles = []
-            st.session_state.origen_por_columna = {}
-            st.session_state.archivos_crudos_temporales = []
-            st.session_state.archivos_dfs = {}
 
     elif st.session_state.origen_datos == "SQL":
         st.subheader("Conexión a Base de Datos")

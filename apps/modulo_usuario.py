@@ -104,7 +104,8 @@ def vista_perfil_pantalla_completa(gestor_usr):
     if archivos:
         crudos = [f for f in archivos if f.startswith("raw_")]
         creados = [f for f in archivos if not f.startswith("raw_")]
-        
+
+        # SECCIÓN DE ARCHIVOS CARGADOS CRUDOS
         col1, col2 = st.columns(2)
         with col1:
             st.markdown("### Archivos Cargados (Crudos)")
@@ -145,11 +146,12 @@ def vista_perfil_pantalla_completa(gestor_usr):
                         st.success(f"Archivo crudo '{f}' eliminado.")
                         st.rerun()
 
+        # SECCIÓN DE ARCHIVOS LIMPIOS
         with col2:
             st.markdown("### Archivos Creados (Unificados y Limpios)")
-            if not creados:
+            if not creados: # Si no hay archivos guardados, mostrar mensaje.
                 st.write("No hay archivos unificados.")
-            for f in creados:
+            for f in creados: # para cada archivo
                 ruta = os.path.join(directorio_guardado, f)
                 c_btn, c_del = st.columns([0.82, 0.18])
                 with c_btn:
@@ -205,6 +207,8 @@ def vista_perfil_pantalla_completa(gestor_usr):
                         st.success(f"Archivo limpio '{f}' eliminado.")
                         st.rerun()
 
+    # HISTORIAL DE OPERACIONES
+    
     st.divider()
     st.markdown('<h2 style="font-size: 1.8rem;">Historial de Operaciones Realizadas</h2>', unsafe_allow_html=True)
     
