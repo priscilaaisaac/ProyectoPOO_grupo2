@@ -43,7 +43,22 @@ def _auto_detectar_columna(attr: str, columnas_disp: list) -> str:
     return "(No asignar)"
 
 
+def formatear_opcion_con_archivo(opcion: str) -> str:
+    """Devuelve 'nombre_de_la_columna (de: nombre_del_archivo.csv)' para las opciones del selectbox."""
+    if opcion == "(No asignar)":
+        return "(No asignar)"
+    origenes = st.session_state.get("origen_por_columna", {})
+    info = origenes.get(opcion)
+    if info:
+        nombre_arch = info if isinstance(info, str) else info.get("archivo", str(info))
+        return f"{opcion} (de: {nombre_arch})"
+    return str(opcion)
+
+
 def modulo_validacion():
+    if not st.session_state.get("archivos_procesados", False):
+        return
+
     archivos_dfs = st.session_state.get("archivos_dfs", {})
     if not archivos_dfs:
         if st.session_state.get("df_crudo_completo") is not None:
@@ -83,6 +98,7 @@ def modulo_validacion():
                             f"Asignar a '{atributo}':",
                             options=opc,
                             index=idx_def,
+                            format_func=formatear_opcion_con_archivo,
                             key=key
                         )
 
@@ -97,6 +113,7 @@ def modulo_validacion():
                             f"Asignar a '{atributo}':",
                             options=opc,
                             index=idx_def,
+                            format_func=formatear_opcion_con_archivo,
                             key=key
                         )
 
@@ -119,6 +136,7 @@ def modulo_validacion():
                     f"Asignar a '{atributo}':",
                     options=opc,
                     index=idx_def,
+                    format_func=formatear_opcion_con_archivo,
                     key=key
                 )
 
@@ -133,6 +151,7 @@ def modulo_validacion():
                     f"Asignar a '{atributo}':",
                     options=opc,
                     index=idx_def,
+                    format_func=formatear_opcion_con_archivo,
                     key=key
                 )
 

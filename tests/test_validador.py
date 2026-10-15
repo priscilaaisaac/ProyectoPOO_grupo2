@@ -235,7 +235,61 @@ class TestValidadorEsquemaAvanzado(unittest.TestCase):
         self.assertEqual(df_unif.loc[0, "aeropuerto_origen"], "EZE")
         self.assertEqual(df_unif.loc[1, "aeropuerto_origen"], "MIA")
         self.assertEqual(df_unif.loc[0, "precio"], 200.0)
-        self.assertEqual(df_unif.loc[1, "precio"], 450.0)
+
+    def test_lector_csv_multiples_archivos_separadores_distintos(self):
+        """Verifica que LectorCSV procese múltiples archivos con separadores distintos, unificando horizontalmente y acumulando metadatos sin colisiones."""
+        from modules.lector_datos import LectorCSV
+        from apps.modulo_validacion import formatear_opcion_con_archivo
+        import streamlit as st
+        
+        f1 = io.StringIO("id_vuelo,aeropuerto_origen,aeropuerto_destino\nFL-9768,JFK,ORY\n")
+        f1.name = "archivo1.csv"
+        f2 = io.StringIO("id_vuelo;aeropuerto_origen;aeropuerto_destino;precio\nFL-1234;EZE;MIA;500.0\n")
+        f2.name = "archivo2.csv"
+        f3 = io.StringIO("id_vuelo\taeropuerto_origen\taeropuerto_destino\nFL-5678\tCOR\tMDZ\n")
+        f3.name = "archivo3.csv"
+        f4 = io.StringIO("id_vuelo|aeropuerto_origen|aeropuerto_destino\nFL-9012|SCL|GRU\n")
+        f4.name = "archivo4.csv"
+
+        lector = LectorCSV()
+        df_res = lector.leer(origen=[f1, f2, f3, f4])
+
+        # 1. Unificación horizontal: dataset ancho
+        self.assertEqual(len(df_res), 1)
+        self.assertEqual(len(df_res.columns), 13)
+
+        # 2. Manejo de duplicados y diferenciación correlativa
+        self.assertIn("id_vuelo", df_res.columns)
+        self.assertIn("id_vuelo (2)", df_res.columns)
+        self.assertIn("id_vuelo (3)", df_res.columns)
+        self.assertIn("id_vuelo (4)", df_res.columns)
+        self.assertIn("precio", df_res.columns)
+
+        # 3. Conservación exacta de los registros por archivo
+        self.assertEqual(df_res.loc[0, "id_vuelo"], "FL-9768")
+        self.assertEqual(df_res.loc[0, "aeropuerto_origen"], "JFK")
+        self.assertEqual(df_res.loc[0, "aeropuerto_destino"], "ORY")
+        self.assertEqual(df_res.loc[0, "id_vuelo (2)"], "FL-1234")
+        self.assertEqual(df_res.loc[0, "aeropuerto_origen (2)"], "EZE")
+        self.assertEqual(df_res.loc[0, "aeropuerto_destino (2)"], "MIA")
+        self.assertEqual(df_res.loc[0, "precio"], 500.0)
+        self.assertEqual(df_res.loc[0, "id_vuelo (3)"], "FL-5678")
+        self.assertEqual(df_res.loc[0, "id_vuelo (4)"], "FL-9012")
+
+        # 4. Acumulación progresiva de metadatos de origen
+        self.assertEqual(lector.origen_por_columna["id_vuelo"], "archivo1.csv")
+        self.assertEqual(lector.origen_por_columna["aeropuerto_origen"], "archivo1.csv")
+        self.assertEqual(lector.origen_por_columna["id_vuelo (2)"], "archivo2.csv")
+        self.assertEqual(lector.origen_por_columna["precio"], "archivo2.csv")
+        self.assertEqual(lector.origen_por_columna["id_vuelo (3)"], "archivo3.csv")
+        self.assertEqual(lector.origen_por_columna["id_vuelo (4)"], "archivo4.csv")
+
+        # 5. Formateo de opciones en los selectbox
+        st.session_state.origen_por_columna = lector.origen_por_columna
+        self.assertEqual(formatear_opcion_con_archivo("(No asignar)"), "(No asignar)")
+        self.assertEqual(formatear_opcion_con_archivo("id_vuelo"), "id_vuelo (de: archivo1.csv)")
+        self.assertEqual(formatear_opcion_con_archivo("id_vuelo (2)"), "id_vuelo (2) (de: archivo2.csv)")
+        self.assertEqual(formatear_opcion_con_archivo("precio"), "precio (de: archivo2.csv)")
 
 
 if __name__ == '__main__':

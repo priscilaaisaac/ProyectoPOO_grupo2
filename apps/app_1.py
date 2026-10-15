@@ -29,7 +29,8 @@ def inicializar_estado():
         "modo_limpieza_directa": False,
         "mostrar_analisis": False,
         "lista_vuelos": [],
-        "df_limpio": None
+        "df_limpio": None,
+        "archivos_procesados": False
     }
     for clave, valor in claves_iniciales.items():
         if clave not in st.session_state:
