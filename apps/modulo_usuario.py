@@ -29,6 +29,10 @@ def limpiar_estado_analisis():
     st.session_state.archivos_crudos_temporales = []
     st.session_state.archivos_subidos_previos = []
     st.session_state.variables_excluidas = []
+    st.session_state.archivos_descartados = set()
+    for k in list(st.session_state.keys()):
+        if k.startswith(("single_req_", "single_opc_", "map_")):
+            del st.session_state[k]
 
 def modulo_usuario(gestor_usr):
     st.sidebar.title("Módulo de Usuario")

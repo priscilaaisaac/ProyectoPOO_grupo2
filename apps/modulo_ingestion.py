@@ -53,17 +53,30 @@ def modulo_ingestion():
         """, unsafe_allow_html=True)
         archivos_subidos = st.file_uploader("Selecciona uno o más archivos", type=["csv", "txt", "xlsx", "xltx", "xltm"], accept_multiple_files=True)
 
-        if archivos_subidos:
+        if "archivos_descartados" not in st.session_state:
+            st.session_state.archivos_descartados = set()
+
+        nombres_uploader = [a.name for a in (archivos_subidos or [])]
+        st.session_state.archivos_descartados = {
+            n for n in st.session_state.archivos_descartados if n in nombres_uploader
+        }
+
+        archivos_activos = [
+            a for a in (archivos_subidos or [])
+            if a.name not in st.session_state.archivos_descartados
+        ]
+
+        if archivos_activos:
             # 1. Evitar carga automática: requerir botón 'Continuar'
-            nombres_actuales = [a.name for a in archivos_subidos]
+            nombres_actuales = [a.name for a in archivos_activos]
             if st.session_state.get("archivos_subidos_previos") != nombres_actuales:
                 st.session_state.archivos_procesados = False
                 st.session_state.archivos_subidos_previos = nombres_actuales
 
             if st.button("Continuar", key="btn_continuar_csv", use_container_width=True):
                 try:
-                    lector = FactoryLectorDatos.obtener_lector_por_archivo(archivos_subidos)
-                    df_consolidado = lector.leer(origen=archivos_subidos)
+                    lector = FactoryLectorDatos.obtener_lector_por_archivo(archivos_activos)
+                    df_consolidado = lector.leer(origen=archivos_activos)
 
                     if df_consolidado.empty or len(df_consolidado.columns) < 1:
                         st.error("Los archivos subidos están vacíos o no contienen columnas válidas.")
@@ -76,15 +89,16 @@ def modulo_ingestion():
                         columnas = list(df_consolidado.columns)
                         origen_map = getattr(lector, 'origen_por_columna', {}) or df_consolidado.attrs.get('origen_por_columna', {})
                         if not origen_map:
-                            origen_map = {col: (archivos_subidos[0].name if archivos_subidos else "Consolidado") for col in columnas}
+                            origen_map = {col: (archivos_activos[0].name if archivos_activos else "Consolidado") for col in columnas}
 
                         st.session_state.df_crudo_completo = df_consolidado
                         st.session_state.columnas_disponibles = columnas
                         st.session_state.origen_por_columna = origen_map
                         st.session_state.archivos_dfs = {"dataset_consolidado": df_consolidado}
-                        st.session_state.archivos_crudos_temporales = archivos_subidos
+                        st.session_state.archivos_crudos_temporales = archivos_activos
                         st.session_state.archivos_procesados = True
-                        st.success(f"Se cargaron y consolidaron {len(archivos_subidos)} archivo(s) exitosamente. Ya puede mapear los atributos abajo.")
+                        st.success(f"Se cargaron y consolidaron {len(archivos_activos)} archivo(s) exitosamente. Ya puede mapear los atributos abajo.")
+                        st.rerun()
                 except Exception as e:
                     st.error(f"Error al procesar archivos: {e}")
                     st.session_state.archivos_procesados = False
@@ -93,8 +107,64 @@ def modulo_ingestion():
                     st.session_state.origen_por_columna = {}
                     st.session_state.archivos_dfs = {}
 
-            # Mostrar vista previa únicamente tras presionar 'Continuar'
+            # Mostrar vista previa y lista de archivos procesados únicamente tras presionar 'Continuar'
             if st.session_state.get("archivos_procesados", False) and st.session_state.get("df_crudo_completo") is not None:
+                # 5. Botón 'X' para descartar/eliminar un archivo específico de los ya procesados
+                st.markdown("##### Archivos incorporados al dataset:")
+                arch_a_quitar = None
+                for arch in list(st.session_state.get("archivos_crudos_temporales", [])):
+                    n_arch = getattr(arch, 'name', str(arch))
+                    cols_arch = [c for c, orig in st.session_state.get("origen_por_columna", {}).items() if orig == n_arch]
+                    c_info, c_btn = st.columns([6, 1])
+                    with c_info:
+                        st.markdown(f"📄 **`{n_arch}`** &nbsp; <small style='color: #666;'>({len(cols_arch)} columnas)</small>", unsafe_allow_html=True)
+                    with c_btn:
+                        if st.button("❌", key=f"btn_del_{n_arch}", help=f"Descartar {n_arch} del dataset"):
+                            arch_a_quitar = n_arch
+
+                if arch_a_quitar:
+                    st.session_state.archivos_descartados.add(arch_a_quitar)
+                    archivos_restantes = [
+                        a for a in st.session_state.archivos_crudos_temporales
+                        if getattr(a, 'name', str(a)) != arch_a_quitar
+                    ]
+
+                    if archivos_restantes:
+                        try:
+                            lector = FactoryLectorDatos.obtener_lector_por_archivo(archivos_restantes)
+                            df_nuevo = lector.leer(origen=archivos_restantes)
+                            cols_nuevas = list(df_nuevo.columns)
+                            origen_nuevo = getattr(lector, 'origen_por_columna', {}) or df_nuevo.attrs.get('origen_por_columna', {})
+
+                            st.session_state.df_crudo_completo = df_nuevo
+                            st.session_state.columnas_disponibles = cols_nuevas
+                            st.session_state.origen_por_columna = origen_nuevo
+                            st.session_state.archivos_dfs = {"dataset_consolidado": df_nuevo}
+                            st.session_state.archivos_crudos_temporales = archivos_restantes
+                            st.session_state.archivos_subidos_previos = [a.name for a in archivos_restantes]
+                            st.session_state.archivos_procesados = True
+
+                            # Limpiar llaves de mapeo de columnas eliminadas
+                            for k in list(st.session_state.keys()):
+                                if k.startswith(("single_req_", "single_opc_", "map_")):
+                                    if st.session_state[k] not in cols_nuevas:
+                                        del st.session_state[k]
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"Error al reconstruir dataset tras descartar archivo: {e}")
+                    else:
+                        st.session_state.archivos_procesados = False
+                        st.session_state.df_crudo_completo = None
+                        st.session_state.columnas_disponibles = []
+                        st.session_state.origen_por_columna = {}
+                        st.session_state.archivos_dfs = {}
+                        st.session_state.archivos_crudos_temporales = []
+                        st.session_state.archivos_subidos_previos = []
+                        for k in list(st.session_state.keys()):
+                            if k.startswith(("single_req_", "single_opc_", "map_")):
+                                del st.session_state[k]
+                        st.rerun()
+
                 st.markdown("**Vista previa de los datos consolidados:**")
                 st.dataframe(st.session_state.df_crudo_completo.head(10), use_container_width=True)
         else:

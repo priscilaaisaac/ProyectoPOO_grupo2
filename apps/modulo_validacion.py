@@ -55,6 +55,108 @@ def formatear_opcion_con_archivo(opcion: str) -> str:
     return str(opcion)
 
 
+def _renderizar_selectboxes_mapeo(nombre_archivo: str, df_archivo: pd.DataFrame, prefix: str) -> dict:
+    """
+    Renderiza los selectbox de mapeo aplicando exclusión mutua estricta:
+    1. Detección de columnas ocupadas: Lee st.session_state para identificar qué columnas físicas ya han sido seleccionadas en los otros selectbox.
+    2. Filtrado dinámico: Para cada atributo del contrato, la lista contiene ['(No asignar)'] + [columna_actual (si hay)] + [columnas libres].
+    3. Conserva el formato visual mediante format_func=formatear_opcion_con_archivo sobre valores internos reales.
+    """
+    cols_archivo = list(df_archivo.columns)
+    atributos_info = (
+        [(attr, f"{prefix}req_{attr}", True) for attr in ATRIBUTOS_REQUERIDOS] +
+        [(attr, f"{prefix}opc_{attr}", False) for attr in ATRIBUTOS_OPCIONALES]
+    )
+
+    # 0. Inicialización de sugerencias iniciales en st.session_state si es la primera vez que se renderizan
+    #    o si el valor guardado previamente ya no pertenece a las columnas del archivo actual.
+    columnas_asignadas_inicio = set()
+    for attr, key, _ in atributos_info:
+        val = st.session_state.get(key)
+        if val and val != "(No asignar)" and val in cols_archivo:
+            columnas_asignadas_inicio.add(val)
+
+    for attr, key, _ in atributos_info:
+        val = st.session_state.get(key)
+        if key not in st.session_state or (val != "(No asignar)" and val not in cols_archivo):
+            cols_candidatas = [c for c in cols_archivo if c not in columnas_asignadas_inicio]
+            sug = _auto_detectar_columna(attr, cols_candidatas)
+            if sug != "(No asignar)" and sug in cols_candidatas:
+                st.session_state[key] = sug
+                columnas_asignadas_inicio.add(sug)
+            else:
+                st.session_state[key] = "(No asignar)"
+
+    # 1. Detección de columnas ocupadas en st.session_state:
+    columnas_ocupadas = set()
+    for attr, key, _ in atributos_info:
+        val = st.session_state.get(key)
+        if val and val != "(No asignar)" and val in cols_archivo:
+            columnas_ocupadas.add(val)
+
+    # 2. Filtrado dinámico y renderizado:
+    mapeo_f = {}
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.markdown("**Variables Críticas (Obligatorias)**")
+        for attr in ATRIBUTOS_REQUERIDOS:
+            key = f"{prefix}req_{attr}"
+            val_actual = st.session_state.get(key)
+            col_seleccionada = val_actual if val_actual and val_actual != "(No asignar)" and val_actual in cols_archivo else None
+
+            # Columnas ocupadas por OTROS selectbox
+            ocupadas_otros = columnas_ocupadas - ({col_seleccionada} if col_seleccionada else set())
+            columnas_libres = [c for c in cols_archivo if c not in ocupadas_otros and c != col_seleccionada]
+
+            # Opciones dinámicas: ['(No asignar)'] + [col_seleccionada (si la hay)] + [columnas libres]
+            if col_seleccionada:
+                opciones = ["(No asignar)", col_seleccionada] + columnas_libres
+                idx_actual = 1
+            else:
+                opciones = ["(No asignar)"] + columnas_libres
+                idx_actual = 0
+
+            opciones = list(dict.fromkeys(opciones))
+
+            mapeo_f[attr] = st.selectbox(
+                f"Asignar a '{attr}':",
+                options=opciones,
+                index=idx_actual,
+                format_func=formatear_opcion_con_archivo,
+                key=key
+            )
+
+    with col2:
+        st.markdown("**Variables Opcionales**")
+        for attr in ATRIBUTOS_OPCIONALES:
+            key = f"{prefix}opc_{attr}"
+            val_actual = st.session_state.get(key)
+            col_seleccionada = val_actual if val_actual and val_actual != "(No asignar)" and val_actual in cols_archivo else None
+
+            ocupadas_otros = columnas_ocupadas - ({col_seleccionada} if col_seleccionada else set())
+            columnas_libres = [c for c in cols_archivo if c not in ocupadas_otros and c != col_seleccionada]
+
+            if col_seleccionada:
+                opciones = ["(No asignar)", col_seleccionada] + columnas_libres
+                idx_actual = 1
+            else:
+                opciones = ["(No asignar)"] + columnas_libres
+                idx_actual = 0
+
+            opciones = list(dict.fromkeys(opciones))
+
+            mapeo_f[attr] = st.selectbox(
+                f"Asignar a '{attr}':",
+                options=opciones,
+                index=idx_actual,
+                format_func=formatear_opcion_con_archivo,
+                key=key
+            )
+
+    return mapeo_f
+
+
 def modulo_validacion():
     # Condicional de escape rápido (early return): abortar si no hay un archivo activamente procesado en el flujo actual
     if not st.session_state.get("archivos_procesados", False) or st.session_state.get("df_crudo_completo") is None:
@@ -77,86 +179,26 @@ def modulo_validacion():
             "Esto permite consolidar archivos aunque tengan encabezados de columnas con nombres distintos (ej. 'aero_orig' vs 'aeropuerto_salida')."
         )
 
-    mapeos_por_archivo = {} # Se inicializa vacío porque almacenará las correspondencias entre los atributos que espera el sistema y las columnas originales seleccionadas por el usuario.
+    mapeos_por_archivo = {}
 
     if es_multifile:
         tabs = st.tabs([f"📄 {nombre}" for nombre in archivos_dfs.keys()])
         for i, (nombre_archivo, df_archivo) in enumerate(archivos_dfs.items()):
             with tabs[i]:
                 st.markdown(f"**Asignación de columnas para `{nombre_archivo}`:**")
-                mapeo_f = {}
-                col1, col2 = st.columns(2)
-                cols_archivo = list(df_archivo.columns)
-
-                with col1:
-                    st.markdown("**Variables Críticas (Obligatorias)**")
-                    for atributo in ATRIBUTOS_REQUERIDOS:
-                        key = f"map_{nombre_archivo}_req_{atributo}"
-                        sugerencia = _auto_detectar_columna(atributo, cols_archivo)
-                        idx_def = cols_archivo.index(sugerencia) + 1 if sugerencia in cols_archivo else 0
-                        opc = ["(No asignar)"] + cols_archivo
-                        mapeo_f[atributo] = st.selectbox(
-                            f"Asignar a '{atributo}':",
-                            options=opc,
-                            index=idx_def,
-                            format_func=formatear_opcion_con_archivo,
-                            key=key
-                        )
-
-                with col2:
-                    st.markdown("**Variables Opcionales**")
-                    for atributo in ATRIBUTOS_OPCIONALES:
-                        key = f"map_{nombre_archivo}_opc_{atributo}"
-                        sugerencia = _auto_detectar_columna(atributo, cols_archivo)
-                        idx_def = cols_archivo.index(sugerencia) + 1 if sugerencia in cols_archivo else 0
-                        opc = ["(No asignar)"] + cols_archivo
-                        mapeo_f[atributo] = st.selectbox(
-                            f"Asignar a '{atributo}':",
-                            options=opc,
-                            index=idx_def,
-                            format_func=formatear_opcion_con_archivo,
-                            key=key
-                        )
-
-                mapeos_por_archivo[nombre_archivo] = mapeo_f
+                mapeos_por_archivo[nombre_archivo] = _renderizar_selectboxes_mapeo(
+                    nombre_archivo=nombre_archivo,
+                    df_archivo=df_archivo,
+                    prefix=f"map_{nombre_archivo}_"
+                )
     else:
         nombre_unico = list(archivos_dfs.keys())[0]
         df_unico = archivos_dfs[nombre_unico]
-        cols_archivo = list(df_unico.columns)
-        mapeo_f = {}
-
-        col1, col2 = st.columns(2)
-        with col1:
-            st.markdown("**Variables Críticas (Obligatorias)**")
-            for atributo in ATRIBUTOS_REQUERIDOS:
-                key = f"single_req_{atributo}"
-                sugerencia = _auto_detectar_columna(atributo, cols_archivo)
-                idx_def = cols_archivo.index(sugerencia) + 1 if sugerencia in cols_archivo else 0
-                opc = ["(No asignar)"] + cols_archivo
-                mapeo_f[atributo] = st.selectbox(
-                    f"Asignar a '{atributo}':",
-                    options=opc,
-                    index=idx_def,
-                    format_func=formatear_opcion_con_archivo,
-                    key=key
-                )
-
-        with col2:
-            st.markdown("**Variables Opcionales**")
-            for atributo in ATRIBUTOS_OPCIONALES:
-                key = f"single_opc_{atributo}"
-                sugerencia = _auto_detectar_columna(atributo, cols_archivo)
-                idx_def = cols_archivo.index(sugerencia) + 1 if sugerencia in cols_archivo else 0
-                opc = ["(No asignar)"] + cols_archivo
-                mapeo_f[atributo] = st.selectbox(
-                    f"Asignar a '{atributo}':",
-                    options=opc,
-                    index=idx_def,
-                    format_func=formatear_opcion_con_archivo,
-                    key=key
-                )
-
-        mapeos_por_archivo[nombre_unico] = mapeo_f
+        mapeos_por_archivo[nombre_unico] = _renderizar_selectboxes_mapeo(
+            nombre_archivo=nombre_unico,
+            df_archivo=df_unico,
+            prefix="single_"
+        )
 
     st.markdown('<h3 style="font-size: 1.4rem;">Guardar y Continuar</h3>', unsafe_allow_html=True)
     # Nombre para el nuevo archivo
