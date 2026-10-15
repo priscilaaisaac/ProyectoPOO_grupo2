@@ -49,18 +49,14 @@ def aplicar_estilos():
         div[data-baseweb="select"] span { font-weight: 500; }
         div[data-baseweb="tag"] { background-color: rgba(150, 150, 150, 0.15) !important; }
         
-        /* Ocultar el texto en inglés forzando el tamaño de fuente a cero */
-        div[data-testid="stFileUploaderDropzoneInstructions"] > div {
-            font-size: 0px !important;
-        }
-        
-        /* Insertar y dar formato únicamente al texto en español */
-        div[data-testid="stFileUploaderDropzoneInstructions"] > div::after {
-            content: "200MB por archivo - CSV, TXT, XLSX, XLTX, XLTM";
-            font-size: 14px !important;
-            color: inherit;
-            opacity: 0.7;
-            display: block;
+        /* Ocultar por completo el texto secundario (límite de peso y extensiones) en el file uploader */
+        [data-testid="stFileUploadDropzone"] small,
+        [data-testid="stFileUploaderDropzone"] small,
+        [data-testid="stFileUploaderDropzoneInstructions"],
+        div[data-testid="stFileUploaderDropzoneInstructions"],
+        section[data-testid="stFileUploadDropzone"] small,
+        section[data-testid="stFileUploaderDropzone"] small {
+            display: none !important;
         }
         
         /* Contenedor principal adaptable y fluido al ancho total */

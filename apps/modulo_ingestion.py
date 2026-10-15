@@ -37,6 +37,18 @@ def modulo_ingestion():
     if st.session_state.origen_datos == "CSV":
         st.subheader("Carga de archivo local")
         st.info("Puede subir uno o varios archivos (.csv, .txt, .xlsx, .xltx, .xltm). Los archivos se consolidarán automáticamente en un único DataFrame.")
+        st.markdown("""
+        <style>
+            [data-testid="stFileUploadDropzone"] small,
+            [data-testid="stFileUploaderDropzone"] small,
+            [data-testid="stFileUploaderDropzoneInstructions"],
+            div[data-testid="stFileUploaderDropzoneInstructions"],
+            section[data-testid="stFileUploadDropzone"] small,
+            section[data-testid="stFileUploaderDropzone"] small {
+                display: none !important;
+            }
+        </style>
+        """, unsafe_allow_html=True)
         archivos_subidos = st.file_uploader("Selecciona uno o más archivos", type=["csv", "txt", "xlsx", "xltx", "xltm"], accept_multiple_files=True)
 
         if archivos_subidos:
