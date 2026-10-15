@@ -56,7 +56,8 @@ def formatear_opcion_con_archivo(opcion: str) -> str:
 
 
 def modulo_validacion():
-    if not st.session_state.get("archivos_procesados", False):
+    # Condicional de escape rápido (early return): abortar si no hay un archivo activamente procesado en el flujo actual
+    if not st.session_state.get("archivos_procesados", False) or st.session_state.get("df_crudo_completo") is None:
         return
 
     archivos_dfs = st.session_state.get("archivos_dfs", {})

@@ -28,16 +28,31 @@ COLUMNAS_CANONICAS = [
 ]
 
 def modulo_limpieza_y_dominio(gestor_usr):
+    # Condicional de escape rápido (early return): abortar si no hay un archivo activamente procesado en el flujo actual
+    tiene_datos = (
+        st.session_state.get("df_crudo") is not None or
+        st.session_state.get("df_estandarizado") is not None or
+        st.session_state.get("df_limpio") is not None
+    )
+    contrato_ok = st.session_state.get("contrato_validado", False)
+    modo_directo = st.session_state.get("modo_limpieza_directa", False)
+
+    if not tiene_datos or (not contrato_ok and not modo_directo):
+        return
+
     nombre_arch = str(st.session_state.get("nombre_archivo_actual", "")).lower()
     nombre_actual = st.session_state.get("nombre_archivo_actual", "Dataset Activo")
     es_archivo_limpio = st.session_state.get("archivo_es_limpio", False) or nombre_arch.endswith("_limpio.csv") or "limpio" in nombre_arch
 
     if es_archivo_limpio:
-        st.divider()
-
         df_mostrar = st.session_state.get("df_limpio")
         if df_mostrar is None:
             df_mostrar = st.session_state.get("df_estandarizado") or st.session_state.get("df_crudo")
+
+        if df_mostrar is None:
+            return
+
+        st.divider()
 
         mapeo = st.session_state.get("mapeo_columnas", {})
         if not mapeo and df_mostrar is not None:
@@ -123,7 +138,7 @@ def modulo_limpieza_y_dominio(gestor_usr):
 
         return
 
-    if st.session_state.get("df_crudo") is None or not st.session_state.get("contrato_validado"):
+    if st.session_state.get("df_crudo") is None or not st.session_state.get("contrato_validado") or st.session_state.get("df_estandarizado") is None:
         return
 
     st.divider()

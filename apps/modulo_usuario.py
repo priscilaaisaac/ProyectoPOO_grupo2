@@ -5,6 +5,31 @@ from apps.modulo_validacion import ATRIBUTOS_REQUERIDOS, ATRIBUTOS_OPCIONALES, C
 from modules.calidad import EstandarizadorDatos
 from modules.fabrica_vuelos import FabricaVuelos
 
+def limpiar_estado_analisis():
+    """
+    Restablece a None o sus valores por defecto las variables de sesión responsables
+    de mantener los datos cargados y el estado del análisis para evitar renderizados fantasma.
+    """
+    st.session_state.df_crudo = None
+    st.session_state.df_crudo_completo = None
+    st.session_state.df_estandarizado = None
+    st.session_state.df_limpio = None
+    st.session_state.contrato_validado = False
+    st.session_state.archivos_procesados = False
+    st.session_state.archivo_es_limpio = False
+    st.session_state.modo_limpieza_directa = False
+    st.session_state.mostrar_analisis = False
+    st.session_state.nombre_archivo_actual = None
+    st.session_state.lista_vuelos = []
+    st.session_state.columnas_disponibles = []
+    st.session_state.origen_por_columna = {}
+    st.session_state.archivos_dfs = {}
+    st.session_state.mapeo_columnas = {}
+    st.session_state.pipeline_ejecutado_recientemente = False
+    st.session_state.archivos_crudos_temporales = []
+    st.session_state.archivos_subidos_previos = []
+    st.session_state.variables_excluidas = []
+
 def modulo_usuario(gestor_usr):
     st.sidebar.title("Módulo de Usuario")
 
@@ -60,6 +85,7 @@ def vista_perfil_pantalla_completa(gestor_usr):
     with col_boton:
         st.write("") # Espaciador
         if st.button("⬅️ Volver", use_container_width=True):
+            limpiar_estado_analisis()
             st.session_state.mostrar_perfil = False
             st.rerun()
 

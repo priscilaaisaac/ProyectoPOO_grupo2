@@ -10,7 +10,7 @@ if str(raiz_proyecto) not in sys.path:
 from modules.gestor_usuarios import GestorUsuarios
 
 # Importaciones modulares locales
-from apps.modulo_usuario import modulo_usuario, vista_perfil_pantalla_completa
+from apps.modulo_usuario import modulo_usuario, vista_perfil_pantalla_completa, limpiar_estado_analisis
 from apps.modulo_ingestion import modulo_ingestion
 from apps.modulo_validacion import modulo_validacion
 from apps.modulo_limpieza import modulo_limpieza_y_dominio
@@ -21,6 +21,7 @@ def inicializar_estado():
     claves_iniciales = {
         "usuario_activo": None, 
         "origen_datos": None,
+        "df_crudo": None,
         "df_crudo_completo": None, 
         "columnas_disponibles": [],
         "origen_por_columna": {}, 
@@ -30,7 +31,10 @@ def inicializar_estado():
         "mostrar_analisis": False,
         "lista_vuelos": [],
         "df_limpio": None,
-        "archivos_procesados": False
+        "df_estandarizado": None,
+        "archivos_procesados": False,
+        "nombre_archivo_actual": None,
+        "archivo_es_limpio": False
     }
     for clave, valor in claves_iniciales.items():
         if clave not in st.session_state:
@@ -99,9 +103,7 @@ def main():
                     st.rerun()
             with col_v2:
                 if st.button("🏠 Volver al Inicio", key="btn_volver_inicio_directo", use_container_width=True):
-                    st.session_state.modo_limpieza_directa = False
-                    st.session_state.df_crudo = None
-                    st.session_state.contrato_validado = False
+                    limpiar_estado_analisis()
                     st.rerun()
         else:
             modulo_ingestion()
