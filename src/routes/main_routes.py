@@ -20,7 +20,7 @@ def dashboard():
     current_email = session.get('email')
     user = User.query.filter_by(email=current_email).first()
     
-    # Consulta filtrada por ID de usuario: el profesor u otros usuarios
+    # Consulta filtrada por ID de usuario: el profesor u ot0ros usuarios
     # jamás verán archivos de compañeros.
     user_files = UserFile.query.filter_by(user_id=user.id).all() if user else []
 
