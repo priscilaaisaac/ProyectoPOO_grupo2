@@ -1,20 +1,21 @@
 """
-Módulo para la lectura de archivos TXT.
-Implementa la clase concreta LectorTXT delegando en LectorCSV.
+Módulo para la lectura de archivos TXT delimitados.
+Implementa la clase concreta LectorTXT heredando directamente de LectorCSV.
 """
 
-from typing import Dict
-import pandas as pd
-from modules.lector_base import LectorDatos
+from typing import Tuple
 from modules.lector_csv import LectorCSV
 
 
-class LectorTXT(LectorDatos):
-    def __init__(self):
-        self.origen_por_columna: Dict[str, str] = {}
+class LectorTXT(LectorCSV):
+    """
+    Lector especializado para archivos de texto plano (.txt).
+    Hereda directamente de LectorCSV y prioriza delimitadores tabulados y barras.
+    """
+    EXTENSIONES_SOPORTADAS: Tuple[str, ...] = ('.txt',)
+    # Prioridad específica de delimitadores para archivos de texto
+    DELIMITADORES_PERMITIDOS: Tuple[str, ...] = ('\t', '|', ';', ',', ' ')
 
-    def leer(self, origen, nombre_tabla: str = None, **kwargs) -> pd.DataFrame:
-        lector_csv = LectorCSV()
-        df = lector_csv.leer(origen, nombre_tabla=nombre_tabla, **kwargs)
-        self.origen_por_columna = lector_csv.origen_por_columna
-        return df
+    def detectar_separador(self, origen, default: str = '\t') -> str:
+        """Prioriza separadores tabulares como '\\t' o '|' para archivos TXT."""
+        return super().detectar_separador(origen, default=default)

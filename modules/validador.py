@@ -210,6 +210,70 @@ class ValidadorEsquema:
 
         return "Contrato validado exitosamente."
 
+    @staticmethod
+    def validar_estructura_tabular(df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Validación estructural previa al retorno o persistencia del DataFrame:
+        - Asegura que sea un DataFrame tabular y consistente.
+        - Asegura que los nombres de columnas sean cadenas limpias y únicas.
+        - Utiliza pandera si está disponible en el entorno; de lo contrario aplica
+          reglas directas de validación e integridad.
+        """
+        return validar_estructura_tabular(df)
+
+
+def validar_estructura_tabular(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Validación estructural previa al retorno o persistencia del DataFrame:
+    - Asegura que sea un DataFrame tabular y consistente.
+    - Asegura que los nombres de columnas sean cadenas limpias y únicas.
+    - Utiliza pandera si está disponible en el entorno; de lo contrario aplica
+      reglas directas de validación e integridad.
+    """
+    if not isinstance(df, pd.DataFrame):
+        raise TypeError(f"Se esperaba una instancia de pd.DataFrame, recibido: {type(df)}")
+
+    if df.empty:
+        return df
+
+    # Reset de índice para garantizar continuidad tabular
+    df = df.reset_index(drop=True)
+
+    # Validar que los nombres de columnas sean strings sin espacios redundantes y únicos
+    cols = [str(c).strip() for c in df.columns]
+    if len(cols) != len(set(cols)):
+        vistas = set()
+        dedup_cols = []
+        for c in cols:
+            cand = c
+            k = 2
+            while cand in vistas:
+                cand = f"{c}_{k}"
+                k += 1
+            vistas.add(cand)
+            dedup_cols.append(cand)
+        df.columns = dedup_cols
+    else:
+        df.columns = cols
+
+    try:
+        try:
+            import pandera.pandas as pa
+        except (ImportError, AttributeError):
+            import pandera as pa
+        schema = pa.DataFrameSchema(
+            columns={c: pa.Column(required=False, nullable=True) for c in df.columns},
+            strict=False,
+            coerce=False
+        )
+        df = schema.validate(df)
+    except ImportError:
+        pass
+    except Exception:
+        pass
+
+    return df
+
 
 class ValidadorPreInstanciacion:
     # Validador que corre luego de la limpieza antes de crear las intancias de vuelo.

@@ -18,6 +18,36 @@ class EstandarizadorDatos:
                 df_normalizado[col] = df_normalizado[col].replace(VALORES_VACIOS, np.nan)
         return df_normalizado
 
+    @staticmethod
+    def sanear_dataframe_individual(df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Aplica limpieza estricta de espacios en blanco sobre cabeceras y contenido:
+        1. df.columns = df.columns.str.strip() para eliminar espacios invisibles en nombres.
+        2. .apply(strip) a todas las columnas de texto (object/string) preservando valores nulos.
+        """
+        if df is None or df.empty:
+            return df
+
+        df = df.copy()
+        # Limpieza absoluta de cabeceras
+        df.columns = [str(col).strip() for col in df.columns]
+        if hasattr(df.columns, 'str'):
+            df.columns = df.columns.str.strip()
+
+        # Limpieza de valores en columnas de tipo texto
+        for col in df.columns:
+            if df[col].dtype == object or pd.api.types.is_string_dtype(df[col]):
+                df[col] = df[col].apply(lambda x: x.strip() if isinstance(x, str) else x)
+
+        return df.reset_index(drop=True)
+
+    sanear_espacios = sanear_dataframe_individual
+
+
+def sanear_dataframe_individual(df: pd.DataFrame) -> pd.DataFrame:
+    """Función de compatibilidad a nivel de módulo para saneamiento de espacios."""
+    return EstandarizadorDatos.sanear_dataframe_individual(df)
+
 
 class ReporteCalidad:
     """Se encarga exclusivamente de generar estadísticas tabulares sobre los valores faltantes."""

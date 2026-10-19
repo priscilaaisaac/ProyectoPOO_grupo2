@@ -7,9 +7,11 @@ from modules.lector_datos import (
     detectar_formato,
     sanear_dataframe_individual,
     validar_estructura_tabular,
+    LectorDatos,
     LectorCSV,
     LectorTXT,
     LectorExcel,
+    LectorOrquestadorMultiArchivo,
     FactoryLectorDatos
 )
 
@@ -229,7 +231,7 @@ class TestLectorDatos(unittest.TestCase):
             "vuelos_destino.txt"
         )
 
-        lector = LectorCSV()
+        lector = FactoryLectorDatos.obtener_lector_por_archivo([arch_csv, arch_txt, arch_excel])
         df_consolidado = lector.leer([arch_csv, arch_txt, arch_excel])
 
         # Verificar columnas y desduplicación horizontal
@@ -270,7 +272,39 @@ class TestLectorDatos(unittest.TestCase):
         self.assertIsInstance(FactoryLectorDatos.obtener_lector_por_archivo(f_txt), LectorTXT)
         f_excel = MockUploadedFile(b"", "datos.xlsx")
         self.assertIsInstance(FactoryLectorDatos.obtener_lector_por_archivo(f_excel), LectorExcel)
-        self.assertIsInstance(FactoryLectorDatos.obtener_lector_por_archivo([f_csv, f_excel]), LectorCSV)
+        self.assertIsInstance(FactoryLectorDatos.obtener_lector_por_archivo([f_csv, f_excel]), LectorOrquestadorMultiArchivo)
+        self.assertIsInstance(FactoryLectorDatos.obtener_lector_por_archivo([f_csv, f_csv]), LectorCSV)
+
+    def test_jerarquia_polimorfica_y_responsabilidades(self):
+        """Verifica el cumplimiento de la jerarquía POO limpia y ubicación de responsabilidades."""
+        # 1. Jerarquía de lectores
+        self.assertTrue(issubclass(LectorCSV, LectorDatos))
+        self.assertTrue(issubclass(LectorTXT, LectorCSV))
+        self.assertTrue(issubclass(LectorExcel, LectorDatos))
+        self.assertFalse(issubclass(LectorExcel, LectorCSV), "LectorExcel NO debe heredar de LectorCSV")
+
+        # 2. Método detectar_separador en instancia de LectorCSV
+        lector_csv = LectorCSV()
+        self.assertTrue(hasattr(lector_csv, "detectar_separador"))
+        buf = io.BytesIO(b"x;y;z\n1;2;3\n")
+        self.assertEqual(lector_csv.detectar_separador(buf), ";")
+
+        # 3. LectorTXT prioriza tabulaciones
+        lector_txt = LectorTXT()
+        self.assertTrue(hasattr(lector_txt, "detectar_separador"))
+        self.assertEqual(lector_txt.EXTENSIONES_SOPORTADAS, ('.txt',))
+
+        # 4. Validar existencia en modules/validador y modules/calidad
+        from modules.validador import ValidadorEsquema, validar_estructura_tabular as val_est
+        from modules.calidad import EstandarizadorDatos, sanear_dataframe_individual as san_est
+
+        df_prueba = pd.DataFrame({"  col_a  ": [" val "], " col_b": [10]})
+        df_saneado = EstandarizadorDatos.sanear_dataframe_individual(df_prueba)
+        self.assertEqual(list(df_saneado.columns), ["col_a", "col_b"])
+        self.assertEqual(df_saneado["col_a"].iloc[0], "val")
+
+        df_validado = ValidadorEsquema.validar_estructura_tabular(df_saneado)
+        self.assertEqual(list(df_validado.columns), ["col_a", "col_b"])
 
 
 if __name__ == "__main__":

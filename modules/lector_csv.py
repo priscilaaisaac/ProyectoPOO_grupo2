@@ -1,38 +1,140 @@
 """
-Módulo para la lectura de archivos CSV y delimitados.
+Módulo para la lectura de archivos CSV y texto delimitado.
 Implementa la clase concreta LectorCSV.
 """
 
-from typing import Dict
+import csv
+from typing import Dict, List, Tuple
 import pandas as pd
-from modules.lector_base import (
-    LectorDatos,
-    detectar_separador,
-    sanear_dataframe_individual,
-    validar_estructura_tabular
-)
+from modules.lector_base import LectorDatos
+
+DELIMITADORES_VALIDOS = (',', ';', '\t', '|', ' ')
 
 
 class LectorCSV(LectorDatos):
+    """
+    Lector de datos para archivos de texto delimitado en formato CSV.
+    Lee exclusivamente archivos CSV usando pd.read_csv y retorna datos crudos.
+    """
+    EXTENSIONES_SOPORTADAS: Tuple[str, ...] = ('.csv',)
+    DELIMITADORES_PERMITIDOS: Tuple[str, ...] = DELIMITADORES_VALIDOS
+
     def __init__(self):
         self.origen_por_columna: Dict[str, str] = {}
 
+    def detectar_separador(self, origen, default: str = ',') -> str:
+        """
+        Detecta el delimitador usando csv.Sniffer().sniff() de la librería estándar,
+        leyendo los primeros 1024 bytes del archivo (.read(1024)).
+        Restringe estrictamente los delimitadores válidos para evitar que símbolos
+        internos (ej. guion) rompan columnas.
+        Aplica .seek(0) inmediatamente después del sniff.
+        """
+        delimitadores = self.DELIMITADORES_PERMITIDOS
+        delimiters_str = ''.join(delimitadores)
+        chunk = ""
+
+        if hasattr(origen, 'read'):
+            if hasattr(origen, 'seek'):
+                try:
+                    origen.seek(0)
+                except Exception:
+                    pass
+            raw = origen.read(1024)
+            if isinstance(raw, bytes):
+                try:
+                    chunk = raw.decode('utf-8')
+                except UnicodeDecodeError:
+                    chunk = raw.decode('latin-1', errors='ignore')
+            else:
+                chunk = str(raw)
+
+            if hasattr(origen, 'seek'):
+                try:
+                    origen.seek(0)
+                except Exception:
+                    pass
+        else:
+            try:
+                with open(origen, 'r', encoding='utf-8') as f:
+                    chunk = f.read(1024)
+            except (UnicodeDecodeError, Exception):
+                try:
+                    with open(origen, 'r', encoding='latin-1', errors='ignore') as f:
+                        chunk = f.read(1024)
+                except Exception:
+                    chunk = ""
+
+        if not chunk or not chunk.strip():
+            return default
+
+        try:
+            sniffer = csv.Sniffer()
+            dialect = sniffer.sniff(chunk, delimiters=delimiters_str)
+            if dialect.delimiter in delimitadores:
+                return dialect.delimiter
+        except Exception:
+            pass
+
+        # Respaldo si csv.Sniffer falla:
+        lines = [l.strip() for l in chunk.splitlines() if l.strip()]
+        if lines:
+            for d in (',', ';', '\t', '|'):
+                if d in delimitadores:
+                    conteo_primera = lines[0].count(d)
+                    if conteo_primera > 0 and all(l.count(d) == conteo_primera for l in lines[:5]):
+                        return d
+
+            if ' ' in delimitadores:
+                num_tokens = [len(l.split()) for l in lines[:5]]
+                if len(num_tokens) > 0 and num_tokens[0] >= 2 and len(set(num_tokens)) == 1:
+                    return ' '
+
+        return default
+
+    def _leer_archivo_individual(self, archivo, **kwargs) -> pd.DataFrame:
+        sep_detectado = self.detectar_separador(archivo)
+        sep_final = kwargs.get('sep', sep_detectado)
+
+        if sep_final in (' ', r'\s+'):
+            sep_a_usar = r'\s+'
+        else:
+            sep_a_usar = sep_final
+
+        if hasattr(archivo, 'seek'):
+            try:
+                archivo.seek(0)
+            except Exception:
+                pass
+
+        try:
+            df = pd.read_csv(archivo, sep=sep_a_usar, skipinitialspace=True)
+        except UnicodeDecodeError:
+            if hasattr(archivo, 'seek'):
+                try:
+                    archivo.seek(0)
+                except Exception:
+                    pass
+            df = pd.read_csv(archivo, sep=sep_a_usar, encoding='latin-1', skipinitialspace=True)
+        except Exception:
+            if hasattr(archivo, 'seek'):
+                try:
+                    archivo.seek(0)
+                except Exception:
+                    pass
+            df = pd.read_csv(archivo, sep=sep_a_usar, engine='python', on_bad_lines='skip', skipinitialspace=True)
+
+        return df
+
     def leer(self, origen, nombre_tabla: str = None, modo_unificacion: str = "horizontal", **kwargs) -> pd.DataFrame:
         """
-        Lee uno o varios archivos CSV aplicando las directivas:
-        1. Detección de separador mediante csv.Sniffer(read(1024)) restringido a [',', ';', '\t', '|'].
-        2. Limpieza de espacios: skipinitialspace=True en lectura, strip en columnas y en textos.
-        3. Concatenación y mapeo seguro:
-           - Por defecto 'horizontal' (axis=1) sumando columnas lado a lado con sufijos ante colisión.
-           - Soporta 'vertical' (axis=0) alineando columnas y completando con NaN.
-           - Preserva el 100% de las columnas en self.origen_por_columna.
-        4. Validación estructural tabular previa al retorno.
+        Lee uno o varios archivos CSV exclusivamente usando pd.read_csv.
+        Devuelve el DataFrame crudo sin saneamiento ni validación interna.
         """
         archivos = list(origen) if isinstance(origen, (list, tuple)) else [origen]
-        lista_dfs = []
+        lista_dfs: List[Tuple[pd.DataFrame, str]] = []
         self.origen_por_columna = {}
 
-        # Determinar modo de unificación ('horizontal' / axis=1 vs 'vertical' / axis=0)
         modo = kwargs.get('modo_unificacion', modo_unificacion)
         if kwargs.get('axis') in (0, '0', 'vertical', 'filas'):
             modo = 'vertical'
@@ -43,64 +145,12 @@ class LectorCSV(LectorDatos):
 
         for archivo in archivos:
             nombre_archivo = getattr(archivo, 'name', str(archivo))
-            nombre_lower = nombre_archivo.lower()
-
-            # 1. Ramificación temprana por extensión (.xlsx, .xls, .xltx, .xltm, .xlsm vs .csv, .txt)
-            es_excel = nombre_lower.endswith(('.xlsx', '.xls', '.xltx', '.xltm', '.xlsm'))
-
-            if es_excel:
-                # 2. Ruta segura para Excel: omitir csv.Sniffer por completo, .seek(0) y forzar engine='openpyxl'
-                if hasattr(archivo, 'seek'):
-                    try:
-                        archivo.seek(0)
-                    except Exception:
-                        pass
-                df = pd.read_excel(archivo, engine='openpyxl')
-            else:
-                # 3. Ruta para Texto (CSV/TXT): solo si el archivo no es Excel ejecutar csv.Sniffer
-                sep_detectado = detectar_separador(archivo)
-                sep_final = kwargs.get('sep', sep_detectado)
-
-                # Lectura segura de espacios: si el separador es ' ', usar sep=r'\s+'
-                # para evitar columnas vacías ante espacios contiguos
-                if sep_final in (' ', r'\s+'):
-                    sep_a_usar = r'\s+'
-                else:
-                    sep_a_usar = sep_final
-
-                # Asegurar .seek(0) antes de pasarlo a pd.read_csv()
-                if hasattr(archivo, 'seek'):
-                    try:
-                        archivo.seek(0)
-                    except Exception:
-                        pass
-
-                # Forzar skipinitialspace=True y manejar codificaciones
-                try:
-                    df = pd.read_csv(archivo, sep=sep_a_usar, skipinitialspace=True)
-                except UnicodeDecodeError:
-                    if hasattr(archivo, 'seek'):
-                        try:
-                            archivo.seek(0)
-                        except Exception:
-                            pass
-                    df = pd.read_csv(archivo, sep=sep_a_usar, encoding='latin-1', skipinitialspace=True)
-                except Exception:
-                    if hasattr(archivo, 'seek'):
-                        try:
-                            archivo.seek(0)
-                        except Exception:
-                            pass
-                    df = pd.read_csv(archivo, sep=sep_a_usar, engine='python', on_bad_lines='skip', skipinitialspace=True)
-
-            # 4. Consolidación inalterada: ambas ramas desembocan en saneamiento y lista_dfs
-            df = sanear_dataframe_individual(df)
+            df = self._leer_archivo_individual(archivo, **kwargs)
             lista_dfs.append((df, nombre_archivo))
 
         if not lista_dfs:
             return pd.DataFrame()
 
-        # 3. Concatenación y Mapeo Seguro
         if es_horizontal:
             columnas_existentes = set()
             dfs_a_unir = []
@@ -134,7 +184,10 @@ class LectorCSV(LectorDatos):
 
             df_consolidado = pd.concat(dfs_a_unir, axis=0, ignore_index=True)
 
-        # 4. Validación Estructural
-        df_consolidado = validar_estructura_tabular(df_consolidado)
         df_consolidado.attrs['origen_por_columna'] = self.origen_por_columna
         return df_consolidado
+
+
+def detectar_separador(origen, default: str = ',') -> str:
+    """Función de conveniencia para detectar separador usando LectorCSV."""
+    return LectorCSV().detectar_separador(origen, default=default)

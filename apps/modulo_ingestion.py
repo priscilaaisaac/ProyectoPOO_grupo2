@@ -9,6 +9,8 @@ except ModuleNotFoundError:
 
 import pandas as pd
 from modules.lector_datos import FactoryLectorDatos
+from modules.calidad import EstandarizadorDatos
+from modules.validador import ValidadorEsquema
 
 def modulo_ingestion():
     st.markdown('<h1 style="font-size: 2.25rem;">Carga de datos</h1>', unsafe_allow_html=True)
@@ -76,7 +78,9 @@ def modulo_ingestion():
             if st.button("Continuar", key="btn_continuar_csv", use_container_width=True):
                 try:
                     lector = FactoryLectorDatos.obtener_lector_por_archivo(archivos_activos)
-                    df_consolidado = lector.leer(origen=archivos_activos)
+                    df_crudo = lector.leer(origen=archivos_activos)
+                    df_saneado = EstandarizadorDatos.sanear_dataframe_individual(df_crudo)
+                    df_consolidado = ValidadorEsquema.validar_estructura_tabular(df_saneado)
 
                     if df_consolidado.empty or len(df_consolidado.columns) < 1:
                         st.error("Los archivos subidos están vacíos o no contienen columnas válidas.")
@@ -132,7 +136,9 @@ def modulo_ingestion():
                     if archivos_restantes:
                         try:
                             lector = FactoryLectorDatos.obtener_lector_por_archivo(archivos_restantes)
-                            df_nuevo = lector.leer(origen=archivos_restantes)
+                            df_crudo_nuevo = lector.leer(origen=archivos_restantes)
+                            df_saneado_nuevo = EstandarizadorDatos.sanear_dataframe_individual(df_crudo_nuevo)
+                            df_nuevo = ValidadorEsquema.validar_estructura_tabular(df_saneado_nuevo)
                             cols_nuevas = list(df_nuevo.columns)
                             origen_nuevo = getattr(lector, 'origen_por_columna', {}) or df_nuevo.attrs.get('origen_por_columna', {})
 
@@ -186,7 +192,9 @@ def modulo_ingestion():
         if conexion_sql and tabla_sql and st.button("Continuar"):
             try:
                 lector = FactoryLectorDatos.obtener_lector("SQL")
-                df_sql = lector.leer(origen=conexion_sql, nombre_tabla=tabla_sql)
+                df_sql_crudo = lector.leer(origen=conexion_sql, nombre_tabla=tabla_sql)
+                df_sql_saneado = EstandarizadorDatos.sanear_dataframe_individual(df_sql_crudo)
+                df_sql = ValidadorEsquema.validar_estructura_tabular(df_sql_saneado)
                 columnas_separadas, origen_map, nombres_renombrados = [], {}, {}
 
                 for col in df_sql.columns:
