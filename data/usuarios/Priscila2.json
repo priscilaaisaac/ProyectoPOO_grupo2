@@ -1,0 +1,12 @@
+{
+    "username": "Priscila2",
+    "password_hash": "scrypt:32768:8:1$wb1WRKjW9hHAUFBL$4889413246ae89dba2137580c5c7227e3d5d20ee9546aed6b30680b3e29787532940f06e3186f6213c4767e5d9eadfc371b42fb0105d95f048b3a013dbd7a8f2",
+    "sesion": {
+        "ultima_actualizacion": null,
+        "origen_datos": null,
+        "variables_excluidas": [],
+        "mapeo_columnas": {},
+        "configuracion_imputacion": {},
+        "historial_comandos": []
+    }
+}

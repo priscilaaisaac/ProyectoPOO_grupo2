@@ -96,7 +96,9 @@ def modulo_limpieza_y_dominio(gestor_usr):
 
             # Botón para eliminar el archivo físico ubicado DEBAJO de "Ir a Análisis Estadístico"
             if st.button("🗑️ Eliminar Archivo Físico", key="btn_eliminar_archivo_limpio_header", use_container_width=True):
-                directorio_guardado = os.path.join("data", "archivos_guardados")
+                usuario_activo = st.session_state.get("usuario_activo")
+                username = usuario_activo.username if usuario_activo else "general"
+                directorio_guardado = gestor_usr.obtener_directorio_archivos(username)
                 ruta_fisica = os.path.join(directorio_guardado, nombre_actual)
                 if os.path.exists(ruta_fisica):
                     os.remove(ruta_fisica)
@@ -403,8 +405,7 @@ def modulo_limpieza_y_dominio(gestor_usr):
                 nombre_base = nombre_base[:-4]
             nombre_limpio = f"{nombre_base}_limpio.csv"
             
-            directorio_guardado = os.path.join("data", "archivos_guardados")
-            os.makedirs(directorio_guardado, exist_ok=True)
+            directorio_guardado = gestor_usr.obtener_directorio_archivos(usuario.username)
             ruta_limpio = os.path.join(directorio_guardado, nombre_limpio)
             df_limpio.to_csv(ruta_limpio, index=False)
             

@@ -233,8 +233,10 @@ def modulo_validacion():
                 validador = ValidadorEsquema(df=df_f, mapeo=map_f, requeridos=ATRIBUTOS_REQUERIDOS)
                 validador.validar()
 
-            directorio_guardado = os.path.join("data", "archivos_guardados")
-            os.makedirs(directorio_guardado, exist_ok=True)
+            usuario_activo = st.session_state.get("usuario_activo")
+            username = usuario_activo.username if usuario_activo else "general"
+            from modules.gestor_usuarios import GestorUsuarios
+            directorio_guardado = GestorUsuarios.obtener_directorio_archivos(username)
 
             # Guardar archivos crudos originales
             if "archivos_crudos_temporales" in st.session_state:

@@ -212,6 +212,7 @@ class ValidadorEsquema:
 
 
 class ValidadorPreInstanciacion:
+    # Validador que corre luego de la limpieza antes de crear las intancias de vuelo.
     """
     Verifica de forma estricta tipos, rangos y completitud de campos obligatorios
     inmediatamente antes de la instanciación de objetos Vuelo:

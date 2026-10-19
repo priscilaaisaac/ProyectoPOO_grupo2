@@ -55,14 +55,18 @@ def modulo_usuario(gestor_usr):
         with pestaña_registro:
             nuevo_usr = st.text_input("Nuevo Usuario:", key="reg_usr")
             nueva_clave = st.text_input("Nueva Contraseña:", type="password", key="reg_pass")
+            nueva_clave_rep = st.text_input("Confirmar Contraseña:", type="password", key="reg_pass_rep")
             if st.button("Crear Cuenta", use_container_width=True):
-                try:
-                    user = gestor_usr.registrar_usuario(nuevo_usr, nueva_clave)
-                    st.session_state.usuario_activo = user
-                    st.sidebar.success(f"Cuenta '{nuevo_usr}' creada exitosamente.")
-                    st.rerun()
-                except ValueError as e:
-                    st.sidebar.error(str(e))
+                if nueva_clave != nueva_clave_rep:
+                    st.sidebar.error("Las contraseñas no coinciden.")
+                else:
+                    try:
+                        user = gestor_usr.registrar_usuario(nuevo_usr, nueva_clave)
+                        st.session_state.usuario_activo = user
+                        st.sidebar.success(f"Cuenta '{nuevo_usr}' creada exitosamente.")
+                        st.rerun()
+                    except ValueError as e:
+                        st.sidebar.error(str(e))
     else:
         usuario_actual = st.session_state.usuario_activo
         st.sidebar.markdown(f"**Usuario:** `{usuario_actual.username}`")
@@ -98,12 +102,13 @@ def vista_perfil_pantalla_completa(gestor_usr):
 
     import os
     import pandas as pd
-    directorio_guardado = os.path.join("data", "archivos_guardados")
+    # AISLAMIENTO: Se obtienen únicamente los archivos del usuario autenticado
+    directorio_guardado = gestor_usr.obtener_directorio_archivos(usuario_actual.username)
     if not os.path.exists(directorio_guardado):
         st.info("Aún no hay archivos guardados físicos en esta sección.")
         archivos = []
     else:
-        archivos = os.listdir(directorio_guardado)
+        archivos = [f for f in os.listdir(directorio_guardado) if os.path.isfile(os.path.join(directorio_guardado, f))]
         
     if archivos:
         crudos = [f for f in archivos if f.startswith("raw_")]

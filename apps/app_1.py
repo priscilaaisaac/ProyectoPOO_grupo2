@@ -4,8 +4,10 @@ import streamlit as st  # type: ignore[import-not-found]
 
 # Configuración de rutas para importar las librerías
 raiz_proyecto = Path(__file__).resolve().parent.parent
-if str(raiz_proyecto) not in sys.path:
-    sys.path.append(str(raiz_proyecto))
+ruta_libs = raiz_proyecto / "libs"
+for ruta in (raiz_proyecto, ruta_libs):
+    if str(ruta) not in sys.path:
+        sys.path.append(str(ruta))
 
 from modules.gestor_usuarios import GestorUsuarios
 
