@@ -80,6 +80,8 @@ class GeneradorReportePDF(GeneradorArchivo):
       3. Tablas de Probabilidades Condicionales Cruzadas Guardadas.
     """
 
+    TITULO_OFICIAL = "Análisis Histórico de Vuelos para la Toma de Decisiones"
+
     def __init__(
         self,
         simulaciones: Optional[List[Dict[str, Any]]] = None,
@@ -98,9 +100,9 @@ class GeneradorReportePDF(GeneradorArchivo):
             metricas=metricas
         )
 
-    def construir_pdf(self) -> bytes:
-        """Alias de compatibilidad para generar_archivo."""
-        return self.generar_archivo()
+    def generar_archivo(self) -> bytes:
+        """Compila y retorna el informe en formato PDF crudo (bytes)."""
+        return self.construir_pdf()
 
     def _crear_estilos(self):
         styles = getSampleStyleSheet()
@@ -288,7 +290,7 @@ class GeneradorReportePDF(GeneradorArchivo):
         except Exception:
             return None
 
-    def generar_archivo(self) -> bytes:
+    def construir_pdf(self) -> bytes:
         """Compila y genera el archivo PDF completo en memoria retornando los bytes crudos."""
         buffer = io.BytesIO()
         doc = SimpleDocTemplate(
@@ -318,16 +320,15 @@ class GeneradorReportePDF(GeneradorArchivo):
             spaceBefore=2, spaceAfter=10
         ))
 
-        contador_seccion = 1
-
         # ------------------------------------------------------------------
         # SECCIÓN 1: Simulaciones Comerciales y Precios Dinámicos
         # ------------------------------------------------------------------
-        if self.simulaciones:
-            story.append(Paragraph(f"{contador_seccion}. Simulaciones Comerciales y Precios Dinámicos", styles["SectionHeading"]))
-            story.append(HRFlowable(width="100%", thickness=0.75, color=colors.HexColor("#90CAF9"), spaceBefore=1, spaceAfter=8))
-            contador_seccion += 1
+        story.append(Paragraph("1. Simulaciones Comerciales y Precios Dinámicos", styles["SectionHeading"]))
+        story.append(HRFlowable(width="100%", thickness=0.75, color=colors.HexColor("#90CAF9"), spaceBefore=1, spaceAfter=8))
 
+        if not self.simulaciones:
+            story.append(Paragraph("No se registraron simulaciones guardadas por el usuario para este dataset.", styles["EmptySectionText"]))
+        else:
             for idx, sim in enumerate(self.simulaciones, 1):
                 ruta = sim.get("ruta", "N/A")
                 franja = sim.get("franja", "N/A")
@@ -394,12 +395,13 @@ class GeneradorReportePDF(GeneradorArchivo):
         # SECCIÓN 2: Visualizaciones y Gráficos Guardados
         # (Gráficos vectoriales renderizados Y tablas adjuntas)
         # ------------------------------------------------------------------
-        if self.graficos:
-            story.append(Spacer(1, 6))
-            story.append(Paragraph(f"{contador_seccion}. Visualizaciones y Gráficos Guardados", styles["SectionHeading"]))
-            story.append(HRFlowable(width="100%", thickness=0.75, color=colors.HexColor("#90CAF9"), spaceBefore=1, spaceAfter=8))
-            contador_seccion += 1
+        story.append(Spacer(1, 6))
+        story.append(Paragraph("2. Visualizaciones y Gráficos Guardados", styles["SectionHeading"]))
+        story.append(HRFlowable(width="100%", thickness=0.75, color=colors.HexColor("#90CAF9"), spaceBefore=1, spaceAfter=8))
 
+        if not self.graficos:
+            story.append(Paragraph("No se registraron gráficos ni visualizaciones guardadas para este dataset.", styles["EmptySectionText"]))
+        else:
             for idx, g in enumerate(self.graficos, 1):
                 titulo_graf = g.get("titulo", f"Visualización #{idx}")
                 tipo_graf = g.get("tipo", "Gráfico")
@@ -457,12 +459,13 @@ class GeneradorReportePDF(GeneradorArchivo):
         # ------------------------------------------------------------------
         # SECCIÓN 3: Tablas de Probabilidades Condicionales Cruzadas Guardadas
         # ------------------------------------------------------------------
-        if self.tablas_condicionales:
-            story.append(Spacer(1, 6))
-            story.append(Paragraph(f"{contador_seccion}. Tablas de Probabilidades Condicionales Cruzadas", styles["SectionHeading"]))
-            story.append(HRFlowable(width="100%", thickness=0.75, color=colors.HexColor("#90CAF9"), spaceBefore=1, spaceAfter=8))
-            contador_seccion += 1
+        story.append(Spacer(1, 6))
+        story.append(Paragraph("3. Tablas de Probabilidades Condicionales Cruzadas", styles["SectionHeading"]))
+        story.append(HRFlowable(width="100%", thickness=0.75, color=colors.HexColor("#90CAF9"), spaceBefore=1, spaceAfter=8))
 
+        if not self.tablas_condicionales:
+            story.append(Paragraph("No se registraron tablas de probabilidades condicionales guardadas para este dataset.", styles["EmptySectionText"]))
+        else:
             for idx, tc in enumerate(self.tablas_condicionales, 1):
                 tipo_tc = tc.get("tipo", f"Tabla Condicional #{idx}")
                 story.append(Paragraph(f"<b>Tabla #{idx}:</b> {tipo_tc}", styles["ItemHeading"]))
