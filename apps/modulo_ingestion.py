@@ -8,7 +8,7 @@ except ModuleNotFoundError:
     st = _StreamlitUnavailable()
 
 import pandas as pd
-from modules.lector import FactoryLectorDatos
+from modules.Lector.lector import FactoryLectorDatos
 from modules.calidad import EstandarizadorDatos
 from modules.validador import ValidadorEsquema
 
@@ -78,7 +78,7 @@ def modulo_ingestion():
             if st.button("Continuar", key="btn_continuar_csv", use_container_width=True):
                 try:
                     lector = FactoryLectorDatos.obtener_lector_por_archivo(archivos_activos)
-                    df_crudo = lector.leer(origen=archivos_activos)
+                    df_crudo = lector.leer_archivos(origen=archivos_activos)
                     df_saneado = EstandarizadorDatos.sanear_dataframe_individual(df_crudo)
                     df_consolidado = ValidadorEsquema.validar_estructura_tabular(df_saneado)
 
@@ -136,7 +136,7 @@ def modulo_ingestion():
                     if archivos_restantes:
                         try:
                             lector = FactoryLectorDatos.obtener_lector_por_archivo(archivos_restantes)
-                            df_crudo_nuevo = lector.leer(origen=archivos_restantes)
+                            df_crudo_nuevo = lector.leer_archivos(origen=archivos_restantes)
                             df_saneado_nuevo = EstandarizadorDatos.sanear_dataframe_individual(df_crudo_nuevo)
                             df_nuevo = ValidadorEsquema.validar_estructura_tabular(df_saneado_nuevo)
                             cols_nuevas = list(df_nuevo.columns)
@@ -192,7 +192,7 @@ def modulo_ingestion():
         if conexion_sql and tabla_sql and st.button("Continuar"):
             try:
                 lector = FactoryLectorDatos.obtener_lector("SQL")
-                df_sql_crudo = lector.leer(origen=conexion_sql, nombre_tabla=tabla_sql)
+                df_sql_crudo = lector.leer_archivos(origen=conexion_sql, nombre_tabla=tabla_sql)
                 df_sql_saneado = EstandarizadorDatos.sanear_dataframe_individual(df_sql_crudo)
                 df_sql = ValidadorEsquema.validar_estructura_tabular(df_sql_saneado)
                 columnas_separadas, origen_map, nombres_renombrados = [], {}, {}

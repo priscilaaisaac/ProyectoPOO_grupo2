@@ -2,12 +2,15 @@
     "username": "Priscila",
     "password_hash": "scrypt:32768:8:1$Cu3Pa9brBUWCC0SQ$96ba81b3cbc7d719d973921dbdf93727eb622c8a09145b0bb93f3a8e99c4dcf112263395b53a84f54b7d0d340d537b492844451404101a379a9a1c93dbc30a43",
     "sesion": {
-        "ultima_actualizacion": "2026-10-13 15:21:22",
-        "origen_datos": null,
+        "ultima_actualizacion": "2026-10-20 12:06:24",
+        "origen_datos": "CSV",
         "variables_excluidas": [],
         "mapeo_columnas": {
-            "aeropuerto_destino": "aeropuerto_destino",
+            "id_vuelo": "id_vuelo",
             "aeropuerto_origen": "aeropuerto_origen",
+            "aeropuerto_destino": "aeropuerto_destino",
+            "origen": "origen",
+            "destino": "destino",
             "fechayhora_origen": "fechayhora_origen",
             "fechayhora_destino": "fechayhora_destino",
             "fechayhora_origen_estipulado": "fechayhora_origen_estipulado",
@@ -15,43 +18,30 @@
             "estado": "estado",
             "capacidad_maxima_avion": "capacidad_maxima_avion",
             "capacidad_usada_avion": "capacidad_usada_avion",
-            "precio": "precio",
-            "origen": "origen",
-            "destino": "destino",
-            "id_vuelo": "id_vuelo"
+            "precio": "precio"
         },
         "configuracion_imputacion": {
             "ubicaciones": "Imputación automática a 'Desconocido'",
             "estado": "Imputación algorítmica inteligente",
             "capacidades": "Imputar por Factor de Ocupación",
-            "precio": "Imputar con la mediana por grupos (país de origen y país de llegada)"
+            "precio": "Imputar por grupos (país de origen y destino)",
+            "id_vuelo": "Autogenerar ID automático (GEN-001, GEN-002, ...)"
         },
         "historial_comandos": [
             {
-                "timestamp": "2026-10-08 17:27:35",
+                "timestamp": "2026-10-20 12:06:24",
                 "accion": "EjecucionPipelineLimpieza",
                 "parametros": {
-                    "archivos": "primer_dataset_limpio.csv",
-                    "total_filas": 100,
-                    "imputaciones": {
-                        "capacidad_maxima_avion": "No modificar (mantener nulos)",
-                        "capacidad_usada_avion": "No modificar (mantener nulos)",
-                        "precio": "Imputar con la mediana global"
-                    }
-                }
-            },
-            {
-                "timestamp": "2026-10-13 15:21:22",
-                "accion": "EjecucionPipelineLimpieza",
-                "parametros": {
-                    "archivos": "raw_dataset_vuelos_csv_faltante_limpio.csv",
-                    "total_filas": 100,
+                    "archivos": "dataset_vuelos_unificado1_limpio.csv",
+                    "total_filas": 500,
                     "imputaciones": {
                         "ubicaciones": "Imputación automática a 'Desconocido'",
                         "estado": "Imputación algorítmica inteligente",
                         "capacidades": "Imputar por Factor de Ocupación",
-                        "precio": "Imputar con la mediana por grupos (país de origen y país de llegada)"
-                    }
+                        "precio": "Imputar por grupos (país de origen y destino)",
+                        "id_vuelo": "Autogenerar ID automático (GEN-001, GEN-002, ...)"
+                    },
+                    "archivo": "dataset_vuelos_unificado1_limpio.csv"
                 }
             }
         ]

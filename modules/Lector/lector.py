@@ -9,14 +9,14 @@ import csv
 from typing import Dict, List, Tuple
 import pandas as pd
 
-from modules.lector_base import LectorDatos
-from modules.lector_texto_delimitado import (
+from modules.Lector.lector_base import LectorDatos
+from modules.Lector.lector_texto_delimitado import (
     LectorTextoDelimitado,
     DELIMITADORES_VALIDOS,
     detectar_separador,
 )
-from modules.lector_excel import LectorExcel
-from modules.lector_sql import LectorSQL
+from modules.Lector.lector_excel import LectorExcel
+from modules.Lector.lector_sql import LectorSQL
 
 
 def detectar_formato(origen) -> Tuple[str, bool]:
@@ -142,6 +142,7 @@ class LectorOrquestadorMultiArchivo(LectorDatos):
         df_consolidado.attrs['origen_por_columna'] = self.origen_por_columna
         return df_consolidado
 
+
 class FactoryLectorDatos:
     @staticmethod
     def obtener_lector(tipo_origen: str) -> LectorDatos:
@@ -189,6 +190,9 @@ class FactoryLectorDatos:
         else:
             raise ValueError(f"Extensión de archivo no soportada: {nombre_archivo}")
 
+
+LectorCSV = LectorTextoDelimitado
+LectorTXT = LectorTextoDelimitado
 
 __all__ = [
     "DELIMITADORES_VALIDOS",

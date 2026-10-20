@@ -2,7 +2,7 @@ import unittest
 import io
 import pandas as pd
 import numpy as np
-from modules.lector import (
+from modules.lector.lector import (
     detectar_separador,
     LectorDatos,
     LectorTextoDelimitado,

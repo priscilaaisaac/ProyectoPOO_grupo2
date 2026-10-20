@@ -1,0 +1,501 @@
+id_vuelo,aeropuerto_origen,aeropuerto_destino,origen,destino,fechayhora_origen,fechayhora_destino,fechayhora_origen_estipulado,fechayhora_destino_estipulado,estado,capacidad_maxima_avion,capacidad_usada_avion,precio
+FL-9225,MAD,BCN,Desconocido,Desconocido,2026-09-30 04:30:00,2026-09-30 07:41:00,2026-09-30 04:30:00,2026-09-30 07:41:00,a tiempo,350,176,1155.76
+FL-1746,Desconocido,Desconocido,Desconocido,Brasil,,2026-09-15 03:22:00,2026-09-14 12:41:00,2026-09-15 03:22:00,a tiempo,220,218,512.75
+FL-7821,Desconocido,ORY,Brasil,Francia,2026-09-03 09:33:00,2026-09-03 22:19:00,2026-09-03 09:33:00,2026-09-03 22:19:00,a tiempo,220,127,735.235
+FL-9528,CDG,Desconocido,Francia,Estados Unidos,2026-09-18 10:37:00,2026-09-18 16:10:00,2026-09-18 10:37:00,2026-09-18 16:10:00,a tiempo,220,132,1856.91
+FL-7350,MIA,JFK,Desconocido,Estados Unidos,2026-09-22 20:10:00,2026-09-23 03:32:00,2026-09-22 20:10:00,2026-09-23 03:32:00,a tiempo,220,165,596.0
+FL-6978,Desconocido,ORY,Desconocido,Francia,2026-09-19 05:20:00,2026-09-19 16:58:00,2026-09-19 05:20:00,2026-09-19 16:58:00,a tiempo,220,65,2252.43
+FL-9238,GRU,GIG,Desconocido,Brasil,,,2026-10-01 08:00:00,2026-10-01 10:00:00,cancelado,150,92,2368.38
+FL-5174,EZE,JFK,Argentina,Estados Unidos,2026-09-07 05:48:00,,2026-09-07 05:48:00,2026-09-07 09:20:00,A tiempo,120,72,1176.5
+FL-2866,Desconocido,GIG,Francia,Brasil,,2026-09-02 21:30:00,2026-09-02 16:47:00,2026-09-02 21:30:00,Cancelado,120,79,2407.08
+FL-6864,BCN,Desconocido,España,Estados Unidos,2026-09-25 10:14:00,,2026-09-25 10:14:00,2026-09-25 12:14:00,a tiempo,120,44,1401.24
+FL-7471,MIA,MAD,Estados Unidos,España,2026-09-29 18:11:00,2026-09-30 08:45:00,2026-09-29 18:11:00,2026-09-30 08:45:00,a tiempo,150,66,679.76
+FL-2677,GRU,ORY,Brasil,Francia,,2026-09-17 03:27:00,2026-09-16 18:24:00,2026-09-16 23:34:00,atrasado,220,65,604.01
+FL-2438,GIG,EZE,Brasil,Desconocido,2026-09-06 03:46:00,2026-09-06 14:02:00,2026-09-06 03:16:00,2026-09-06 13:32:00,atrasado,150,90,943.66
+FL-8399,CDG,Desconocido,Francia,Desconocido,,2026-09-07 07:15:00,2026-09-06 18:51:00,2026-09-07 02:21:00,atrasado,167,100,1727.03
+FL-8729,GRU,AEP,Brasil,Argentina,2026-09-23 00:25:00,2026-09-23 10:08:00,2026-09-23 00:25:00,2026-09-23 10:08:00,a tiempo,300,108,2431.71
+FL-6259,GRU,Desconocido,Brasil,Argentina,,,2026-09-03 21:02:00,2026-09-04 01:17:00,Cancelado,300,180,1088.41
+FL-8732,EZE,AEP,Argentina,Desconocido,2026-09-30 14:24:00,2026-09-30 23:12:00,2026-09-30 14:24:00,2026-09-30 23:12:00,a tiempo,180,50,710.72
+FL-1015,EZE,AEP,Argentina,Argentina,2026-09-12 10:43:00,2026-09-13 00:02:00,2026-09-12 10:43:00,2026-09-13 00:02:00,a tiempo,300,31,892.81
+FL-4520,GRU,MAD,Brasil,España,2026-09-12 08:53:00,,2026-09-12 08:53:00,2026-09-12 13:48:00,a tiempo,220,88,2343.46
+FL-1062,AEP,BCN,Argentina,España,2026-09-07 03:05:00,2026-09-07 11:48:00,2026-09-07 03:05:00,2026-09-07 11:48:00,A tiempo,243,146,2427.49
+FL-4059,EZE,CDG,Argentina,Francia,,,2026-09-11 02:10:00,2026-09-11 08:14:00,atrasado,350,131,1188.82
+FL-6544,EZE,Desconocido,Argentina,Argentina,2026-09-24 02:17:00,2026-09-24 06:18:00,2026-09-24 02:17:00,2026-09-24 06:18:00,a tiempo,257,154,1956.17
+FL-8545,MIA,EZE,Estados Unidos,Argentina,2026-09-27 20:52:00,2026-09-28 06:31:00,2026-09-27 16:37:00,2026-09-28 06:31:00,atrasado,180,178,2276.07
+FL-3587,JFK,MAD,Estados Unidos,España,2026-09-17 13:37:00,2026-09-17 17:10:00,2026-09-17 13:37:00,2026-09-17 17:10:00,a tiempo,350,307,990.36
+FL-1162,AEP,MIA,Argentina,Estados Unidos,,,2026-09-22 12:22:00,2026-09-22 19:40:00,cancelado,220,179,1176.5
+FL-8182,AEP,BCN,Argentina,España,2026-09-15 03:37:00,2026-09-15 08:45:00,2026-09-15 03:37:00,2026-09-15 08:45:00,a tiempo,120,120,1976.69
+FL-4350,AEP,GRU,Argentina,Desconocido,,2026-09-20 05:05:00,2026-09-20 03:02:00,2026-09-20 05:05:00,a tiempo,300,212,1042.78
+FL-7636,MIA,Desconocido,Estados Unidos,Brasil,,,2026-09-27 02:57:00,2026-09-27 08:47:00,cancelado,183,110,912.83
+FL-2856,CDG,JFK,Desconocido,Estados Unidos,2026-09-06 18:35:00,2026-09-07 04:03:00,2026-09-06 18:35:00,2026-09-07 04:03:00,a tiempo,300,266,2467.66
+FL-7752,Desconocido,EZE,Desconocido,Argentina,,,2026-10-01 08:00:00,2026-10-01 10:00:00,cancelado,180,120,862.385
+FL-7285,JFK,Desconocido,Estados Unidos,Francia,2026-09-20 23:00:00,2026-09-21 02:22:00,2026-09-20 23:00:00,2026-09-21 02:22:00,A tiempo,350,210,1699.05
+FL-7620,JFK,BCN,Desconocido,España,2026-09-11 17:16:00,2026-09-12 02:17:00,2026-09-11 13:41:00,2026-09-11 22:42:00,atrasado,120,48,1456.35
+FL-3640,GIG,EZE,Brasil,Argentina,2026-09-27 04:12:00,2026-09-27 16:51:00,2026-09-27 04:12:00,2026-09-27 16:51:00,a tiempo,150,80,1560.63
+FL-7123,MAD,ORY,Desconocido,Francia,2026-09-15 17:57:00,2026-09-16 08:24:00,2026-09-15 17:57:00,2026-09-16 08:24:00,A tiempo,180,138,1799.1
+FL-3064,BCN,MAD,España,España,2026-09-07 21:21:00,2026-09-08 04:13:00,2026-09-07 17:06:00,2026-09-07 23:58:00,atrasado,350,33,2145.79
+FL-1081,Desconocido,Desconocido,Brasil,Argentina,2026-09-27 10:29:00,2026-09-27 17:58:00,2026-09-27 10:29:00,2026-09-27 17:58:00,a tiempo,120,72,2038.26
+FL-9146,Desconocido,BCN,Brasil,España,2026-09-09 11:34:00,2026-09-09 23:28:00,2026-09-09 11:34:00,2026-09-09 23:28:00,a tiempo,150,146,2343.46
+FL-9507,ORY,MAD,Francia,España,2026-09-05 11:33:00,,2026-09-05 11:33:00,2026-09-05 23:46:00,a tiempo,538,323,1696.46
+FL-4694,MIA,Desconocido,Estados Unidos,Francia,2026-09-06 19:08:00,2026-09-07 07:07:00,2026-09-06 19:08:00,2026-09-07 07:07:00,A tiempo,350,337,1853.52
+FL-8990,MIA,AEP,Estados Unidos,Desconocido,2026-09-01 15:12:00,2026-09-02 02:53:00,2026-09-01 15:12:00,2026-09-02 02:53:00,a tiempo,300,244,1007.94
+FL-8188,Desconocido,Desconocido,Desconocido,Brasil,2026-09-25 11:36:00,2026-09-25 20:46:00,2026-09-25 11:36:00,2026-09-25 20:46:00,a tiempo,72,43,1815.63
+FL-9558,GIG,CDG,Brasil,Francia,,,2026-09-24 00:14:00,2026-09-24 09:13:00,cancelado,180,53,527.43
+FL-1665,EZE,GIG,Argentina,Desconocido,2026-09-08 06:13:00,2026-09-08 20:02:00,2026-09-08 06:13:00,2026-09-08 20:02:00,a tiempo,300,165,876.75
+FL-1191,MIA,BCN,Estados Unidos,Desconocido,,,2026-09-25 23:13:00,2026-09-26 09:16:00,a tiempo,220,157,1370.49
+FL-6576,GRU,EZE,Brasil,Desconocido,,,2026-09-10 17:32:00,2026-09-11 00:59:00,cancelado,120,86,669.32
+FL-3465,MIA,MAD,Desconocido,Desconocido,2026-09-03 01:31:00,2026-09-03 08:26:00,2026-09-03 01:31:00,2026-09-03 08:26:00,a tiempo,120,104,2237.16
+FL-3017,ORY,CDG,Francia,Francia,2026-09-02 21:19:00,2026-09-03 10:56:00,2026-09-02 21:19:00,2026-09-03 10:56:00,a tiempo,350,119,2492.82
+FL-8128,JFK,GIG,Estados Unidos,Brasil,2026-09-02 21:32:00,,2026-09-02 21:32:00,2026-09-03 05:06:00,a tiempo,300,180,552.67
+FL-5380,Desconocido,CDG,Brasil,Francia,2026-09-17 08:19:00,2026-09-17 16:04:00,2026-09-17 08:19:00,2026-09-17 16:04:00,a tiempo,220,136,2088.67
+FL-2939,Desconocido,JFK,Desconocido,Estados Unidos,2026-09-29 09:16:00,2026-09-29 12:28:00,2026-09-29 09:16:00,2026-09-29 12:28:00,a tiempo,220,214,775.83
+FL-3667,CDG,GIG,Francia,Brasil,2026-09-15 01:49:00,2026-09-15 11:58:00,2026-09-15 01:49:00,2026-09-15 11:58:00,A tiempo,350,147,1463.47
+FL-2263,MAD,GIG,España,Brasil,,2026-10-01 16:59:00,2026-10-01 10:18:00,2026-10-01 16:59:00,a tiempo,350,166,777.89
+FL-6432,EZE,MAD,Argentina,España,,,2026-09-07 21:52:00,2026-09-07 23:52:00,cancelado,120,75,769.51
+FL-2049,CDG,MIA,Francia,Estados Unidos,2026-09-09 12:58:00,2026-09-09 20:01:00,2026-09-09 12:58:00,2026-09-09 20:01:00,a tiempo,120,35,1649.63
+FL-4150,ORY,MIA,Francia,Estados Unidos,2026-09-27 14:13:00,2026-09-27 22:26:00,2026-09-27 14:13:00,2026-09-27 22:26:00,a tiempo,148,89,1907.31
+FL-2339,MAD,Desconocido,España,Francia,2026-09-13 17:50:00,2026-09-13 20:22:00,2026-09-13 17:50:00,2026-09-13 20:22:00,a tiempo,220,142,2332.22
+FL-2702,BCN,Desconocido,España,Desconocido,2026-09-07 03:29:00,2026-09-07 18:20:00,2026-09-07 00:49:00,2026-09-07 15:40:00,Atrasado,150,44,1300.66
+FL-1318,GRU,ORY,Brasil,Francia,2026-09-20 15:09:00,,2026-09-20 15:09:00,2026-09-20 17:09:00,a tiempo,220,165,755.21
+FL-6327,EZE,JFK,Desconocido,Estados Unidos,,,2026-09-05 04:57:00,2026-09-05 16:33:00,Cancelado,220,136,1491.335
+FL-7015,MIA,JFK,Desconocido,Estados Unidos,2026-09-14 05:04:00,2026-09-14 17:44:00,2026-09-14 05:04:00,2026-09-14 17:44:00,a tiempo,350,173,1491.335
+FL-4384,GRU,BCN,Desconocido,España,,2026-09-28 03:18:00,2026-09-28 00:41:00,2026-09-28 03:18:00,a tiempo,220,33,1078.28
+FL-2560,MIA,AEP,Estados Unidos,Argentina,2026-09-03 07:52:00,,2026-09-03 07:52:00,2026-09-03 14:55:00,a tiempo,220,132,2276.07
+FL-2546,JFK,CDG,Estados Unidos,Francia,,,2026-09-06 05:30:00,2026-09-06 15:56:00,cancelado,113,68,1036.44
+FL-2003,Desconocido,CDG,Brasil,Francia,2026-09-07 19:27:00,2026-09-08 01:45:00,2026-09-07 19:27:00,2026-09-08 01:45:00,a tiempo,350,87,715.26
+FL-7768,CDG,EZE,Francia,Argentina,,,2026-09-08 09:47:00,2026-09-08 22:28:00,cancelado,120,101,2176.07
+FL-3020,BCN,MIA,Desconocido,Estados Unidos,2026-09-25 23:29:00,2026-09-26 09:57:00,2026-09-25 23:29:00,2026-09-26 08:55:00,atrasado,60,36,2206.84
+FL-5770,Desconocido,MIA,España,Estados Unidos,2026-09-19 22:08:00,2026-09-20 08:22:00,2026-09-19 21:01:00,2026-09-20 07:15:00,atrasado,180,144,1152.42
+FL-5217,JFK,GIG,Estados Unidos,Brasil,2026-09-03 09:54:00,,2026-09-03 09:54:00,2026-09-03 14:36:00,A tiempo,120,57,1003.36
+FL-4567,ORY,MIA,Francia,Estados Unidos,2026-09-29 00:16:00,2026-09-29 03:49:00,2026-09-29 00:16:00,2026-09-29 02:11:00,Atrasado,150,62,614.54
+FL-8461,MIA,ORY,Estados Unidos,Francia,2026-09-10 12:48:00,2026-09-11 01:27:00,2026-09-10 12:48:00,2026-09-11 01:27:00,a tiempo,300,182,886.87
+FL-7387,MAD,GIG,España,Brasil,2026-09-16 23:25:00,2026-09-17 04:43:00,2026-09-16 23:25:00,2026-09-17 04:43:00,a tiempo,180,102,559.23
+FL-9286,JFK,BCN,Estados Unidos,España,2026-09-08 10:18:00,2026-09-08 13:16:00,2026-09-08 10:18:00,2026-09-08 13:16:00,a tiempo,150,90,2171.73
+FL-4627,Desconocido,BCN,España,España,2026-09-09 16:15:00,2026-09-09 23:10:00,2026-09-09 16:15:00,2026-09-09 23:10:00,a tiempo,350,239,1527.9
+FL-1549,GIG,GRU,Brasil,Brasil,2026-09-23 05:26:00,2026-09-23 15:50:00,2026-09-23 03:25:00,2026-09-23 13:49:00,atrasado,350,337,1696.46
+FL-8370,AEP,CDG,Argentina,Desconocido,2026-09-16 01:40:00,2026-09-16 10:48:00,2026-09-16 01:40:00,2026-09-16 10:48:00,a tiempo,220,132,876.75
+FL-8971,GIG,ORY,Brasil,Francia,2026-09-21 22:58:00,,2026-09-21 22:58:00,2026-09-22 13:11:00,A tiempo,150,90,912.01
+FL-9540,MIA,MAD,Estados Unidos,España,2026-09-29 20:48:00,2026-09-30 06:17:00,2026-09-29 20:48:00,2026-09-30 06:17:00,A tiempo,150,137,1523.32
+FL-6319,MIA,GIG,Estados Unidos,Desconocido,2026-09-18 10:19:00,,2026-09-18 10:19:00,2026-09-18 18:06:00,a tiempo,350,345,980.59
+FL-8721,ORY,AEP,Francia,Argentina,2026-09-08 22:23:00,2026-09-09 06:11:00,2026-09-08 22:23:00,2026-09-09 06:11:00,a tiempo,150,67,2176.07
+FL-9672,GRU,MAD,Brasil,España,,2026-09-28 21:27:00,2026-09-28 06:34:00,2026-09-28 21:27:00,a tiempo,220,210,652.33
+FL-7899,GRU,Desconocido,Brasil,Estados Unidos,2026-09-14 14:09:00,,2026-09-14 14:09:00,2026-09-15 00:44:00,A tiempo,180,85,858.88
+FL-3888,Desconocido,EZE,Desconocido,Argentina,2026-10-01 02:30:00,2026-10-01 06:46:00,2026-10-01 02:30:00,2026-10-01 06:46:00,a tiempo,350,341,883.19
+FL-6273,EZE,MIA,Argentina,Estados Unidos,2026-09-22 20:51:00,2026-09-23 01:54:00,2026-09-22 20:51:00,2026-09-23 01:54:00,a tiempo,350,75,1176.5
+FL-7269,GRU,BCN,Brasil,España,2026-09-28 06:11:00,2026-09-28 08:13:00,2026-09-28 06:11:00,2026-09-28 08:13:00,A tiempo,350,206,2452.71
+FL-2335,BCN,JFK,España,Estados Unidos,,,2026-09-17 23:08:00,2026-09-18 12:47:00,cancelado,220,189,1321.49
+FL-6199,ORY,GIG,Desconocido,Brasil,2026-09-13 11:00:00,2026-09-13 19:43:00,2026-09-13 11:00:00,2026-09-13 19:43:00,a tiempo,120,111,1424.585
+FL-3535,JFK,GRU,Estados Unidos,Brasil,,,2026-09-03 19:56:00,2026-09-04 07:29:00,cancelado,150,37,690.23
+FL-3887,Desconocido,Desconocido,Argentina,Brasil,2026-09-02 03:17:00,2026-09-02 11:39:00,2026-09-02 00:31:00,2026-09-02 08:53:00,Atrasado,300,274,731.86
+FL-1596,MIA,EZE,Estados Unidos,Desconocido,,2026-09-13 10:40:00,2026-09-13 00:26:00,2026-09-13 10:40:00,a tiempo,150,66,1007.94
+FL-3755,AEP,MAD,Argentina,España,,2026-10-01 11:30:00,2026-10-01 08:00:00,2026-10-01 11:30:00,a tiempo,150,90,542.54
+FL-3030,BCN,CDG,Desconocido,Francia,2026-09-02 22:39:00,2026-09-03 07:53:00,2026-09-02 18:36:00,2026-09-03 03:50:00,atrasado,300,35,2368.89
+FL-5063,Desconocido,GRU,Desconocido,Brasil,2026-09-14 06:06:00,2026-09-14 09:52:00,2026-09-14 06:06:00,2026-09-14 09:52:00,Exitoso,350,210,1033.54
+FL-4107,Desconocido,CDG,España,Francia,2026-09-23 04:01:00,2026-09-23 13:31:00,2026-09-23 00:17:00,2026-09-23 09:47:00,atrasado,150,90,2332.22
+FL-1916,CDG,MAD,Desconocido,España,,,2026-09-27 20:57:00,2026-09-28 05:50:00,cancelado,300,141,2049.07
+FL-2955,ORY,MIA,Francia,Estados Unidos,2026-09-27 22:50:00,2026-09-28 09:20:00,2026-09-27 22:50:00,2026-09-28 09:20:00,a tiempo,350,232,1023.41
+FL-6779,Desconocido,Desconocido,Desconocido,Argentina,2026-09-30 00:35:00,2026-09-30 10:49:00,2026-09-30 00:35:00,2026-09-30 10:49:00,a tiempo,253,152,841.58
+FL-9364,BCN,MAD,Desconocido,España,2026-09-24 20:49:00,2026-09-25 10:04:00,2026-09-24 20:49:00,2026-09-25 10:04:00,A tiempo,163,98,1456.35
+FL-9588,JFK,ORY,Estados Unidos,Francia,2026-09-11 10:04:00,2026-09-11 19:34:00,2026-09-11 06:08:00,2026-09-11 15:38:00,atrasado,300,298,1209.42
+FL-3625,CDG,GRU,Francia,Brasil,2026-09-02 13:44:00,,2026-09-02 13:44:00,2026-09-02 17:53:00,A tiempo,220,165,1106.44
+FL-6729,Desconocido,GIG,Argentina,Brasil,2026-09-16 15:35:00,2026-09-17 02:40:00,2026-09-16 15:35:00,2026-09-17 02:40:00,a tiempo,220,132,835.52
+GEN-001,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-002,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-003,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-004,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-005,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-006,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-007,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-008,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-009,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-010,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-011,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-012,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-013,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-014,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-015,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-016,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-017,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-018,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-019,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-020,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-021,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-022,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-023,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-024,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-025,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-026,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-027,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-028,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-029,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-030,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-031,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-032,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-033,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-034,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-035,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-036,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-037,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-038,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-039,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-040,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-041,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-042,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-043,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-044,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-045,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-046,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-047,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-048,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-049,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-050,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-051,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-052,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-053,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-054,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-055,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-056,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-057,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-058,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-059,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-060,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-061,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-062,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-063,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-064,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-065,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-066,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-067,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-068,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-069,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-070,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-071,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-072,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-073,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-074,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-075,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-076,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-077,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-078,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-079,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-080,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-081,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-082,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-083,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-084,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-085,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-086,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-087,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-088,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-089,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-090,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-091,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-092,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-093,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-094,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-095,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-096,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-097,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-098,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-099,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-100,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-101,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-102,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-103,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-104,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-105,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-106,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-107,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-108,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-109,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-110,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-111,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-112,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-113,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-114,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-115,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-116,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-117,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-118,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-119,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-120,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-121,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-122,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-123,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-124,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-125,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-126,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-127,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-128,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-129,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-130,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-131,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-132,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-133,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-134,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-135,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-136,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-137,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-138,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-139,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-140,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-141,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-142,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-143,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-144,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-145,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-146,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-147,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-148,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-149,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-150,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-151,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-152,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-153,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-154,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-155,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-156,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-157,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-158,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-159,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-160,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-161,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-162,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-163,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-164,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-165,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-166,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-167,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-168,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-169,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-170,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-171,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-172,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-173,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-174,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-175,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-176,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-177,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-178,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-179,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-180,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-181,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-182,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-183,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-184,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-185,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-186,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-187,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-188,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-189,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-190,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-191,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-192,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-193,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-194,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-195,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-196,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-197,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-198,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-199,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-200,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-201,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-202,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-203,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-204,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-205,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-206,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-207,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-208,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-209,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-210,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-211,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-212,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-213,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-214,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-215,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-216,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-217,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-218,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-219,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-220,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-221,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-222,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-223,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-224,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-225,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-226,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-227,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-228,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-229,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-230,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-231,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-232,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-233,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-234,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-235,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-236,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-237,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-238,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-239,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-240,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-241,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-242,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-243,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-244,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-245,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-246,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-247,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-248,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-249,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-250,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-251,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-252,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-253,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-254,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-255,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-256,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-257,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-258,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-259,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-260,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-261,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-262,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-263,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-264,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-265,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-266,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-267,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-268,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-269,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-270,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-271,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-272,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-273,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-274,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-275,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-276,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-277,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-278,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-279,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-280,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-281,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-282,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-283,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-284,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-285,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-286,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-287,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-288,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-289,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-290,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-291,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-292,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-293,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-294,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-295,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-296,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-297,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-298,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-299,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-300,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-301,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-302,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-303,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-304,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-305,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-306,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-307,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-308,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-309,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-310,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-311,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-312,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-313,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-314,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-315,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-316,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-317,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-318,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-319,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-320,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-321,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-322,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-323,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-324,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-325,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-326,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-327,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-328,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-329,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-330,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-331,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-332,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-333,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-334,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-335,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-336,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-337,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-338,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-339,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-340,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-341,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-342,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-343,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-344,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-345,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-346,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-347,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-348,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-349,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-350,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-351,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-352,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-353,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-354,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-355,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-356,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-357,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-358,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-359,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-360,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-361,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-362,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-363,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-364,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-365,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-366,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-367,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-368,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-369,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-370,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-371,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-372,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-373,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-374,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-375,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-376,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-377,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-378,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-379,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-380,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-381,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-382,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-383,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-384,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-385,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-386,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-387,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-388,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-389,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-390,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-391,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-392,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-393,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-394,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-395,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-396,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-397,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-398,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-399,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46
+GEN-400,Desconocido,Desconocido,Desconocido,Desconocido,,,2026-10-01 08:00:00,2026-10-01 10:00:00,Desconocido,220,165,1696.46

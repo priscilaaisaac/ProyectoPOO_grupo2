@@ -5,8 +5,9 @@ from datetime import datetime
 from typing import List, Dict, Optional
 from modules.Vuelos import Vuelo
 from modules.fabrica_vuelos import FabricaVuelos
-from modules.analisis_estadistico import MotorEstadisticoVuelos, SimuladorPreciosDinamicos
-from modules.generador_pdf import GeneradorReportePDF
+from modules.Estadistica.motor_estadistico_descriptivo import MotorEstadisticoDescriptivo
+from modules.Estadistica.simulador_precios import SimuladorPreciosDinamicos
+from modules.Generador_Archivo.generador_pdf import GeneradorReportePDF
 
 
 COLUMNAS_GRAFICOS = [
@@ -294,7 +295,7 @@ def vista_analisis_estadistico(gestor_usr=None):
 
     # Inicialización del motor estadístico y del simulador
     try:
-        motor = MotorEstadisticoVuelos(lista_vuelos)
+        motor = MotorEstadisticoDescriptivo(lista_vuelos)
         simulador = SimuladorPreciosDinamicos(motor)
         df_fuente = st.session_state.get("df_limpio")
         mapeo_activo = st.session_state.get("mapeo_columnas", {})

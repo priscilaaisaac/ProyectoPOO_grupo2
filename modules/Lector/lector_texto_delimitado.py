@@ -7,7 +7,7 @@ de formatos basados en delimitadores.
 import csv
 from typing import Dict, List, Tuple
 import pandas as pd
-from modules.lector_base import LectorDatos
+from modules.Lector.lector_base import LectorDatos
 
 DELIMITADORES_VALIDOS = (',', ';', '\t', '|', ' ')
 

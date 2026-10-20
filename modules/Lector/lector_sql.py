@@ -6,7 +6,7 @@ Implementa la clase concreta LectorSQL heredando de LectorDatos.
 from typing import Tuple
 import pandas as pd
 from sqlalchemy import create_engine
-from modules.lector_base import LectorDatos
+from modules.Lector.lector_base import LectorDatos
 
 
 class LectorSQL(LectorDatos):
