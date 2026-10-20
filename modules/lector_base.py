@@ -16,7 +16,7 @@ class LectorDatos(ABC):
     EXTENSIONES_SOPORTADAS: Tuple[str, ...] = ()
 
     @abstractmethod
-    def leer(self, origen, **kwargs) -> pd.DataFrame:
+    def leer_archivos(self, origen, **kwargs) -> pd.DataFrame:
         """
         Lee datos desde un origen (ruta de archivo, buffer de memoria o lista de orígenes)
         y retorna un DataFrame con los datos crudos.

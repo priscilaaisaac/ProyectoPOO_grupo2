@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import altair as alt
 from datetime import datetime
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Optional
 from modules.Vuelos import Vuelo
 from modules.fabrica_vuelos import FabricaVuelos
 from modules.analisis_estadistico import MotorEstadisticoVuelos, SimuladorPreciosDinamicos

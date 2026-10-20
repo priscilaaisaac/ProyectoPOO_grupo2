@@ -10,12 +10,13 @@ from typing import Dict, List, Tuple
 import pandas as pd
 
 from modules.lector_base import LectorDatos
-from modules.lector_csv import LectorCSV, DELIMITADORES_VALIDOS, detectar_separador
-from modules.lector_txt import LectorTXT
+from modules.lector_texto_delimitado import (
+    LectorTextoDelimitado,
+    DELIMITADORES_VALIDOS,
+    detectar_separador,
+)
 from modules.lector_excel import LectorExcel
 from modules.lector_sql import LectorSQL
-from modules.calidad import sanear_dataframe_individual, EstandarizadorDatos
-from modules.validador import validar_estructura_tabular, ValidadorEsquema
 
 
 def detectar_formato(origen) -> Tuple[str, bool]:
@@ -83,7 +84,7 @@ class LectorOrquestadorMultiArchivo(LectorDatos):
     def __init__(self):
         self.origen_por_columna: Dict[str, str] = {}
 
-    def leer(self, origen, nombre_tabla: str = None, modo_unificacion: str = "horizontal", **kwargs) -> pd.DataFrame:
+    def leer_archivos(self, origen, nombre_tabla: str = None, modo_unificacion: str = "horizontal", **kwargs) -> pd.DataFrame:
         archivos = list(origen) if isinstance(origen, (list, tuple)) else [origen]
         lista_dfs: List[Tuple[pd.DataFrame, str]] = []
         self.origen_por_columna = {}
@@ -98,7 +99,7 @@ class LectorOrquestadorMultiArchivo(LectorDatos):
 
         for archivo in archivos:
             lector_especifico = FactoryLectorDatos.obtener_lector_por_archivo(archivo)
-            df_indiv = lector_especifico.leer(archivo, **kwargs)
+            df_indiv = lector_especifico.leer_archivos(archivo, **kwargs)
             nombre_archivo = getattr(archivo, 'name', str(archivo))
             lista_dfs.append((df_indiv, nombre_archivo))
 
@@ -141,19 +142,16 @@ class LectorOrquestadorMultiArchivo(LectorDatos):
         df_consolidado.attrs['origen_por_columna'] = self.origen_por_columna
         return df_consolidado
 
-
 class FactoryLectorDatos:
     @staticmethod
     def obtener_lector(tipo_origen: str) -> LectorDatos:
         """
         Retorna la instancia adecuada según el tipo de origen.
-        tipo_origen debe ser 'CSV', 'TXT', 'EXCEL' o 'SQL'.
+        tipo_origen debe ser 'CSV', 'TXT', 'TEXTO_DELIMITADO', 'EXCEL' o 'SQL'.
         """
         tipo = str(tipo_origen).upper()
-        if tipo == "CSV":
-            return LectorCSV()
-        elif tipo == "TXT":
-            return LectorTXT()
+        if tipo in ("CSV", "TXT", "TEXTO_DELIMITADO"):
+            return LectorTextoDelimitado()
         elif tipo == "EXCEL":
             return LectorExcel()
         elif tipo == "SQL":
@@ -166,15 +164,15 @@ class FactoryLectorDatos:
         """Determina y retorna la instancia de LectorDatos adecuada según la extensión del archivo."""
         if isinstance(nombre_archivo, (list, tuple)):
             if not nombre_archivo:
-                return LectorCSV()
+                return LectorTextoDelimitado()
 
             tipos = []
             for item in nombre_archivo:
                 n = getattr(item, 'name', str(item)).lower()
                 if n.endswith(LectorExcel.EXTENSIONES_SOPORTADAS):
                     tipos.append('EXCEL')
-                elif n.endswith(LectorTXT.EXTENSIONES_SOPORTADAS):
-                    tipos.append('TXT')
+                elif n.endswith(LectorTextoDelimitado.EXTENSIONES_SOPORTADAS):
+                    tipos.append('CSV')
                 else:
                     tipos.append('CSV')
 
@@ -184,10 +182,8 @@ class FactoryLectorDatos:
             return LectorOrquestadorMultiArchivo()
 
         nombre = getattr(nombre_archivo, 'name', str(nombre_archivo)).lower()
-        if nombre.endswith(LectorCSV.EXTENSIONES_SOPORTADAS):
-            return LectorCSV()
-        elif nombre.endswith(LectorTXT.EXTENSIONES_SOPORTADAS):
-            return LectorTXT()
+        if nombre.endswith(LectorTextoDelimitado.EXTENSIONES_SOPORTADAS):
+            return LectorTextoDelimitado()
         elif nombre.endswith(LectorExcel.EXTENSIONES_SOPORTADAS):
             return LectorExcel()
         else:
@@ -198,9 +194,8 @@ __all__ = [
     "DELIMITADORES_VALIDOS",
     "detectar_separador",
     "detectar_formato",
-    "sanear_dataframe_individual",
-    "validar_estructura_tabular",
     "LectorDatos",
+    "LectorTextoDelimitado",
     "LectorCSV",
     "LectorTXT",
     "LectorExcel",

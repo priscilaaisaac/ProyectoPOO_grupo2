@@ -2,18 +2,16 @@ import unittest
 import io
 import pandas as pd
 import numpy as np
-from modules.lector_datos import (
+from modules.lector import (
     detectar_separador,
-    detectar_formato,
-    sanear_dataframe_individual,
-    validar_estructura_tabular,
     LectorDatos,
+    LectorTextoDelimitado,
     LectorCSV,
-    LectorTXT,
     LectorExcel,
     LectorOrquestadorMultiArchivo,
     FactoryLectorDatos
 )
+from modules.calidad import sanear_dataframe_individual
 
 
 class MockUploadedFile(io.BytesIO):
@@ -54,7 +52,7 @@ class TestLectorDatos(unittest.TestCase):
         self.assertEqual(sep, ",")
 
         lector = LectorCSV()
-        df = lector.leer(archivo)
+        df = lector.leer_archivos(archivo)
         self.assertIn("id_vuelo", df.columns)
         self.assertIn("aeropuerto_origen", df.columns)
         self.assertIn("aeropuerto_destino", df.columns)
@@ -97,7 +95,7 @@ class TestLectorDatos(unittest.TestCase):
         )
 
         lector = LectorCSV()
-        df = lector.leer([arch1, arch2])
+        df = lector.leer_archivos([arch1, arch2])
 
         # Columnas esperadas: id, origen, fecha, id (2), destino, precio
         esperadas = ["id", "origen", "fecha", "id (2)", "destino", "precio"]
@@ -129,7 +127,7 @@ class TestLectorDatos(unittest.TestCase):
         )
 
         lector = LectorCSV()
-        df = lector.leer([arch1, arch2], modo_unificacion="vertical")
+        df = lector.leer_archivos([arch1, arch2], modo_unificacion="vertical")
 
         self.assertEqual(len(df), 4)
         self.assertIn("id", df.columns)
@@ -150,7 +148,7 @@ class TestLectorDatos(unittest.TestCase):
         self.assertEqual(sep, " ")
 
         lector = LectorCSV()
-        df = lector.leer(archivo)
+        df = lector.leer_archivos(archivo)
         self.assertEqual(list(df.columns), ["id_vuelo", "aeropuerto_origen", "aeropuerto_destino"])
         self.assertEqual(len(df), 2)
         self.assertEqual(df["id_vuelo"].iloc[0], "FL-9768")
@@ -158,8 +156,8 @@ class TestLectorDatos(unittest.TestCase):
         self.assertEqual(df["aeropuerto_destino"].iloc[0], "ORY")
 
     def test_delimitador_espacios_multiples_sin_columnas_vacias(self):
-        """
-        Prueba lectura con espacios múltiples entre columnas (sep=r'\\s+').
+        r"""
+        Prueba lectura con espacios múltiples entre columnas (sep=r'\s+').
         Asegura que no se generen columnas vacías espurias y se preserven los IDs con guion.
         """
         contenido = (
@@ -172,7 +170,7 @@ class TestLectorDatos(unittest.TestCase):
         self.assertEqual(sep, " ")
 
         lector = LectorCSV()
-        df = lector.leer(archivo)
+        df = lector.leer_archivos(archivo)
         self.assertEqual(list(df.columns), ["id_vuelo", "aeropuerto_origen", "aeropuerto_destino"])
         self.assertEqual(len(df), 2)
         self.assertEqual(df["id_vuelo"].iloc[0], "FL-9768")
@@ -195,7 +193,7 @@ class TestLectorDatos(unittest.TestCase):
         )
 
         lector = LectorCSV()
-        df = lector.leer([arch_coma, arch_espacio])
+        df = lector.leer_archivos([arch_coma, arch_espacio])
 
         self.assertEqual(list(df.columns), ["id_vuelo", "origen", "id_vuelo (2)", "destino"])
         self.assertEqual(lector.origen_por_columna["id_vuelo"], "vuelos_coma.csv")
@@ -232,7 +230,7 @@ class TestLectorDatos(unittest.TestCase):
         )
 
         lector = FactoryLectorDatos.obtener_lector_por_archivo([arch_csv, arch_txt, arch_excel])
-        df_consolidado = lector.leer([arch_csv, arch_txt, arch_excel])
+        df_consolidado = lector.leer_archivos([arch_csv, arch_txt, arch_excel])
 
         # Verificar columnas y desduplicación horizontal
         esperadas = ["id_vuelo", "aeropuerto_origen", "id_vuelo (2)", "aeropuerto_destino", "id_vuelo (3)", "precio"]
@@ -255,48 +253,47 @@ class TestLectorDatos(unittest.TestCase):
         arch_excel = MockUploadedFile(excel_buf.getvalue(), "datos.xlsx")
 
         lector = FactoryLectorDatos.obtener_lector_por_archivo(arch_excel)
-        df = lector.leer(arch_excel)
+        df = lector.leer_archivos(arch_excel)
         self.assertEqual(list(df.columns), ["vuelo", "asientos"])
         self.assertEqual(df["vuelo"].iloc[0], "FL-99")
         self.assertEqual(df["asientos"].iloc[0], 180)
 
     def test_factory_lector(self):
         """Verifica que FactoryLectorDatos retorne la clase correcta."""
-        self.assertIsInstance(FactoryLectorDatos.obtener_lector("csv"), LectorCSV)
-        self.assertIsInstance(FactoryLectorDatos.obtener_lector("txt"), LectorTXT)
+        self.assertIsInstance(FactoryLectorDatos.obtener_lector("csv"), LectorTextoDelimitado)
+        self.assertIsInstance(FactoryLectorDatos.obtener_lector("txt"), LectorTextoDelimitado)
+        self.assertIsInstance(FactoryLectorDatos.obtener_lector("texto_delimitado"), LectorTextoDelimitado)
         self.assertIsInstance(FactoryLectorDatos.obtener_lector("excel"), LectorExcel)
 
         f_csv = MockUploadedFile(b"a,b\n1,2\n", "datos.csv")
         f_txt = MockUploadedFile(b"a\tb\n1\t2\n", "datos.txt")
-        self.assertIsInstance(FactoryLectorDatos.obtener_lector_por_archivo(f_csv), LectorCSV)
-        self.assertIsInstance(FactoryLectorDatos.obtener_lector_por_archivo(f_txt), LectorTXT)
+        self.assertIsInstance(FactoryLectorDatos.obtener_lector_por_archivo(f_csv), LectorTextoDelimitado)
+        self.assertIsInstance(FactoryLectorDatos.obtener_lector_por_archivo(f_txt), LectorTextoDelimitado)
         f_excel = MockUploadedFile(b"", "datos.xlsx")
         self.assertIsInstance(FactoryLectorDatos.obtener_lector_por_archivo(f_excel), LectorExcel)
         self.assertIsInstance(FactoryLectorDatos.obtener_lector_por_archivo([f_csv, f_excel]), LectorOrquestadorMultiArchivo)
-        self.assertIsInstance(FactoryLectorDatos.obtener_lector_por_archivo([f_csv, f_csv]), LectorCSV)
+        self.assertIsInstance(FactoryLectorDatos.obtener_lector_por_archivo([f_csv, f_csv]), LectorTextoDelimitado)
 
     def test_jerarquia_polimorfica_y_responsabilidades(self):
         """Verifica el cumplimiento de la jerarquía POO limpia y ubicación de responsabilidades."""
-        # 1. Jerarquía de lectores
-        self.assertTrue(issubclass(LectorCSV, LectorDatos))
-        self.assertTrue(issubclass(LectorTXT, LectorCSV))
+        # 1. Jerarquía de lectores: LectorTextoDelimitado unifica CSV y TXT y hereda de LectorDatos
+        self.assertTrue(issubclass(LectorTextoDelimitado, LectorDatos))
         self.assertTrue(issubclass(LectorExcel, LectorDatos))
-        self.assertFalse(issubclass(LectorExcel, LectorCSV), "LectorExcel NO debe heredar de LectorCSV")
+        self.assertFalse(issubclass(LectorExcel, LectorTextoDelimitado), "LectorExcel NO debe heredar de LectorTextoDelimitado")
 
-        # 2. Método detectar_separador en instancia de LectorCSV
-        lector_csv = LectorCSV()
-        self.assertTrue(hasattr(lector_csv, "detectar_separador"))
+        # 2. Método detectar_separador en instancia de LectorTextoDelimitado
+        lector_txt_del = LectorTextoDelimitado()
+        self.assertTrue(hasattr(lector_txt_del, "detectar_separador"))
         buf = io.BytesIO(b"x;y;z\n1;2;3\n")
-        self.assertEqual(lector_csv.detectar_separador(buf), ";")
+        self.assertEqual(lector_txt_del.detectar_separador(buf), ";")
 
-        # 3. LectorTXT prioriza tabulaciones
-        lector_txt = LectorTXT()
-        self.assertTrue(hasattr(lector_txt, "detectar_separador"))
-        self.assertEqual(lector_txt.EXTENSIONES_SOPORTADAS, ('.txt',))
+        # 3. Soporte de extensiones unificadas (.csv y .txt)
+        self.assertIn('.csv', lector_txt_del.EXTENSIONES_SOPORTADAS)
+        self.assertIn('.txt', lector_txt_del.EXTENSIONES_SOPORTADAS)
 
         # 4. Validar existencia en modules/validador y modules/calidad
-        from modules.validador import ValidadorEsquema, validar_estructura_tabular as val_est
-        from modules.calidad import EstandarizadorDatos, sanear_dataframe_individual as san_est
+        from modules.validador import ValidadorEsquema
+        from modules.calidad import EstandarizadorDatos
 
         df_prueba = pd.DataFrame({"  col_a  ": [" val "], " col_b": [10]})
         df_saneado = EstandarizadorDatos.sanear_dataframe_individual(df_prueba)

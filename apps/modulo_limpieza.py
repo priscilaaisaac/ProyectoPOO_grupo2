@@ -3,10 +3,10 @@ import os
 import pandas as pd
 from modules.calidad import ReporteCalidad, AnalizadorDuplicados, EstandarizadorDatos
 from modules.pipeline_limpieza import (
-    PipelineLimpieza, SaneadorCategoricos, SaneadorUbicaciones,
+    PipelineLimpieza, SaneadorUbicaciones,
     ImputadorMedianaGlobal, ImputadorMedianaPorGrupo, ImputadorMediaGlobal,
     ImputadorCapacidadesPorFactorOcupacion, ImputadorEstadoInteligente,
-    GeneradorIdVuelo, AutogeneradorIds, EliminadorFilasNulas
+    GeneradorIdVuelo, EliminadorFilasNulas
 )
 from modules.fabrica_vuelos import FabricaVuelos
 from modules.validador import ValidadorPreInstanciacion

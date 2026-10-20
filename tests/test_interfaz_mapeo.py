@@ -1,11 +1,7 @@
 import unittest
-from unittest.mock import MagicMock
-import pandas as pd
 from apps.modulo_validacion import (
     _auto_detectar_columna,
-    formatear_opcion_con_archivo,
-    ATRIBUTOS_REQUERIDOS,
-    ATRIBUTOS_OPCIONALES
+    formatear_opcion_con_archivo
 )
 
 

@@ -16,7 +16,7 @@ class LectorSQL(LectorDatos):
     """
     EXTENSIONES_SOPORTADAS: Tuple[str, ...] = ('sql',)
 
-    def leer(self, origen: str, nombre_tabla: str = None, **kwargs) -> pd.DataFrame:
+    def leer_archivos(self, origen: str, nombre_tabla: str = None, **kwargs) -> pd.DataFrame:
         """
         Lee datos de una tabla en la base de datos SQL indicada.
         Devuelve el DataFrame crudo sin saneamiento ni validación interna.

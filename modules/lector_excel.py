@@ -18,7 +18,7 @@ class LectorExcel(LectorDatos):
     def __init__(self):
         self.origen_por_columna: Dict[str, str] = {}
 
-    def _leer_archivo_individual(self, archivo, **kwargs) -> pd.DataFrame:
+    def _leer(self, archivo, **kwargs) -> pd.DataFrame:
         if hasattr(archivo, 'seek'):
             try:
                 archivo.seek(0)
@@ -27,7 +27,7 @@ class LectorExcel(LectorDatos):
         sheet_name = kwargs.get('sheet_name', 0)
         return pd.read_excel(archivo, sheet_name=sheet_name, engine='openpyxl')
 
-    def leer(self, origen, nombre_tabla: str = None, modo_unificacion: str = "horizontal", **kwargs) -> pd.DataFrame:
+    def leer_archivos(self, origen, nombre_tabla: str = None, modo_unificacion: str = "horizontal", **kwargs) -> pd.DataFrame:
         """
         Lee uno o varios archivos Excel usando pd.read_excel(..., engine='openpyxl').
         Devuelve el DataFrame crudo sin saneamiento ni validación.
@@ -46,7 +46,7 @@ class LectorExcel(LectorDatos):
 
         for archivo in archivos:
             nombre_archivo = getattr(archivo, 'name', str(archivo))
-            df = self._leer_archivo_individual(archivo, **kwargs)
+            df = self._leer(archivo, **kwargs)
             lista_dfs.append((df, nombre_archivo))
 
         if not lista_dfs:

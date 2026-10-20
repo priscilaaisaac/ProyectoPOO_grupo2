@@ -15,7 +15,7 @@ from reportlab.platypus import (
     HRFlowable,
     KeepTogether
 )
-from reportlab.graphics.shapes import Drawing, Rect, String, Line, Group
+from reportlab.graphics.shapes import Drawing
 from reportlab.graphics.charts.barcharts import VerticalBarChart
 from reportlab.graphics.charts.piecharts import Pie
 from reportlab.graphics.charts.legends import Legend

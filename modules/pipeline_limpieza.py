@@ -10,19 +10,6 @@ class OperacionLimpieza(ABC):
         pass
 
 
-class SaneadorCategoricos(OperacionLimpieza):
-    """Asigna 'Desconocido' a columnas de texto con valores nulos."""
-
-    def __init__(self, columnas_categoricas: list[str]):
-        self.columnas = columnas_categoricas
-
-    def aplicar(self, df: pd.DataFrame) -> pd.DataFrame:
-        df_resultado = df.copy()
-        for col in self.columnas:
-            if col in df_resultado.columns:
-                df_resultado[col] = df_resultado[col].fillna("Desconocido")
-        return df_resultado
-
 
 class ImputadorMedianaGlobal(OperacionLimpieza):
     """Imputa nulos de una columna numérica con la mediana de toda la columna."""
@@ -327,41 +314,6 @@ class GeneradorIdVuelo(OperacionLimpieza):
                     nuevos_ids.append(None)
 
             df_resultado.loc[es_nulo, col] = [nid for nid in nuevos_ids if nid is not None]
-
-        return df_resultado
-
-
-AutogeneradorIds = GeneradorIdVuelo
-
-
-class TratamientoFechas(OperacionLimpieza):
-    """
-    Estrategia de limpieza para campos temporales (fechas y horas).
-    - 'Eliminar fila si falta': Descarta registros donde la fecha sea nula o inválida
-      (crítico para fechas estipuladas necesarias en el análisis de retrasos).
-    - 'Dejar nulo': Mantiene valores nulos o normaliza valores erróneos a NaT
-      (para representar vuelos sin registro efectivo o cancelados en fechas reales).
-    """
-
-    def __init__(self, columna: str, metodo: str = "Eliminar fila si falta"):
-        self.columna = columna
-        self.metodo = metodo
-
-    def aplicar(self, df: pd.DataFrame) -> pd.DataFrame:
-        df_resultado = df.copy()
-        if self.columna not in df_resultado.columns:
-            return df_resultado
-
-        fechas_dt = pd.to_datetime(df_resultado[self.columna], errors="coerce")
-
-        if self.metodo == "Eliminar fila si falta":
-            mask_valida = df_resultado[self.columna].notna() & fechas_dt.notna()
-            df_resultado = df_resultado[mask_valida].copy()
-            df_resultado[self.columna] = fechas_dt[mask_valida]
-            return df_resultado.reset_index(drop=True)
-        elif self.metodo in ("Dejar nulo", "No modificar (mantener nulos)"):
-            df_resultado[self.columna] = fechas_dt
-            return df_resultado
 
         return df_resultado
 

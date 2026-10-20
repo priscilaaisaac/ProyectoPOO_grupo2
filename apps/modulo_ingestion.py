@@ -8,7 +8,7 @@ except ModuleNotFoundError:
     st = _StreamlitUnavailable()
 
 import pandas as pd
-from modules.lector_datos import FactoryLectorDatos
+from modules.lector import FactoryLectorDatos
 from modules.calidad import EstandarizadorDatos
 from modules.validador import ValidadorEsquema
 
