@@ -100,8 +100,6 @@ def vista_perfil_pantalla_completa(gestor_usr):
     st.write("En esta sección podés visualizar tus archivos cargados (crudos) y los archivos que has creado (unificados)")
     st.divider()
 
-    import os
-    import pandas as pd
     # AISLAMIENTO: Se obtienen únicamente los archivos del usuario autenticado
     directorio_guardado = gestor_usr.obtener_directorio_archivos(usuario_actual.username)
     if not os.path.exists(directorio_guardado):

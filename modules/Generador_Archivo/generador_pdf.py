@@ -20,6 +20,7 @@ from reportlab.graphics.charts.barcharts import VerticalBarChart
 from reportlab.graphics.charts.piecharts import Pie
 from reportlab.graphics.charts.legends import Legend
 from reportlab.pdfgen import canvas
+from modules.Generador_Archivo.generador_archivo_base import GeneradorArchivo
 
 
 PALETA_COLORES = [
@@ -70,7 +71,7 @@ class NumberedCanvas(canvas.Canvas):
         self.restoreState()
 
 
-class GeneradorReportePDF:
+class GeneradorReportePDF(GeneradorArchivo):
     """
     Generador de informes ejecutivos en formato PDF orientado a la toma de decisiones.
     Estructura estrictamente el reporte en 3 secciones independientes:
@@ -78,8 +79,6 @@ class GeneradorReportePDF:
       2. Visualizaciones y Gráficos Guardados (con gráficos visuales vectoriales y tablas).
       3. Tablas de Probabilidades Condicionales Cruzadas Guardadas.
     """
-
-    TITULO_OFICIAL = "Análisis Histórico de Vuelos para la Toma de Decisiones"
 
     def __init__(
         self,
@@ -90,12 +89,18 @@ class GeneradorReportePDF:
         usuario: Optional[str] = None,
         metricas: Optional[List[Dict[str, Any]]] = None
     ):
-        self.simulaciones = simulaciones or []
-        self.graficos = graficos or []
-        self.tablas_condicionales = tablas_condicionales or metricas or []
-        self.nombre_dataset = nombre_dataset
-        self.usuario = usuario or "Analista de Operaciones"
-        self.fecha_emision = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+        super().__init__(
+            simulaciones=simulaciones,
+            graficos=graficos,
+            tablas_condicionales=tablas_condicionales,
+            nombre_dataset=nombre_dataset,
+            usuario=usuario,
+            metricas=metricas
+        )
+
+    def construir_pdf(self) -> bytes:
+        """Alias de compatibilidad para generar_archivo."""
+        return self.generar_archivo()
 
     def _crear_estilos(self):
         styles = getSampleStyleSheet()
@@ -283,7 +288,7 @@ class GeneradorReportePDF:
         except Exception:
             return None
 
-    def construir_pdf(self) -> bytes:
+    def generar_archivo(self) -> bytes:
         """Compila y genera el archivo PDF completo en memoria retornando los bytes crudos."""
         buffer = io.BytesIO()
         doc = SimpleDocTemplate(
@@ -313,15 +318,16 @@ class GeneradorReportePDF:
             spaceBefore=2, spaceAfter=10
         ))
 
+        contador_seccion = 1
+
         # ------------------------------------------------------------------
         # SECCIÓN 1: Simulaciones Comerciales y Precios Dinámicos
         # ------------------------------------------------------------------
-        story.append(Paragraph("1. Simulaciones Comerciales y Precios Dinámicos", styles["SectionHeading"]))
-        story.append(HRFlowable(width="100%", thickness=0.75, color=colors.HexColor("#90CAF9"), spaceBefore=1, spaceAfter=8))
+        if self.simulaciones:
+            story.append(Paragraph(f"{contador_seccion}. Simulaciones Comerciales y Precios Dinámicos", styles["SectionHeading"]))
+            story.append(HRFlowable(width="100%", thickness=0.75, color=colors.HexColor("#90CAF9"), spaceBefore=1, spaceAfter=8))
+            contador_seccion += 1
 
-        if not self.simulaciones:
-            story.append(Paragraph("No se registraron simulaciones guardadas por el usuario para este dataset.", styles["EmptySectionText"]))
-        else:
             for idx, sim in enumerate(self.simulaciones, 1):
                 ruta = sim.get("ruta", "N/A")
                 franja = sim.get("franja", "N/A")
@@ -388,13 +394,12 @@ class GeneradorReportePDF:
         # SECCIÓN 2: Visualizaciones y Gráficos Guardados
         # (Gráficos vectoriales renderizados Y tablas adjuntas)
         # ------------------------------------------------------------------
-        story.append(Spacer(1, 6))
-        story.append(Paragraph("2. Visualizaciones y Gráficos Guardados", styles["SectionHeading"]))
-        story.append(HRFlowable(width="100%", thickness=0.75, color=colors.HexColor("#90CAF9"), spaceBefore=1, spaceAfter=8))
+        if self.graficos:
+            story.append(Spacer(1, 6))
+            story.append(Paragraph(f"{contador_seccion}. Visualizaciones y Gráficos Guardados", styles["SectionHeading"]))
+            story.append(HRFlowable(width="100%", thickness=0.75, color=colors.HexColor("#90CAF9"), spaceBefore=1, spaceAfter=8))
+            contador_seccion += 1
 
-        if not self.graficos:
-            story.append(Paragraph("No se registraron gráficos ni visualizaciones guardadas para este dataset.", styles["EmptySectionText"]))
-        else:
             for idx, g in enumerate(self.graficos, 1):
                 titulo_graf = g.get("titulo", f"Visualización #{idx}")
                 tipo_graf = g.get("tipo", "Gráfico")
@@ -452,13 +457,12 @@ class GeneradorReportePDF:
         # ------------------------------------------------------------------
         # SECCIÓN 3: Tablas de Probabilidades Condicionales Cruzadas Guardadas
         # ------------------------------------------------------------------
-        story.append(Spacer(1, 6))
-        story.append(Paragraph("3. Tablas de Probabilidades Condicionales Cruzadas", styles["SectionHeading"]))
-        story.append(HRFlowable(width="100%", thickness=0.75, color=colors.HexColor("#90CAF9"), spaceBefore=1, spaceAfter=8))
+        if self.tablas_condicionales:
+            story.append(Spacer(1, 6))
+            story.append(Paragraph(f"{contador_seccion}. Tablas de Probabilidades Condicionales Cruzadas", styles["SectionHeading"]))
+            story.append(HRFlowable(width="100%", thickness=0.75, color=colors.HexColor("#90CAF9"), spaceBefore=1, spaceAfter=8))
+            contador_seccion += 1
 
-        if not self.tablas_condicionales:
-            story.append(Paragraph("No se registraron tablas de probabilidades condicionales guardadas para este dataset.", styles["EmptySectionText"]))
-        else:
             for idx, tc in enumerate(self.tablas_condicionales, 1):
                 tipo_tc = tc.get("tipo", f"Tabla Condicional #{idx}")
                 story.append(Paragraph(f"<b>Tabla #{idx}:</b> {tipo_tc}", styles["ItemHeading"]))

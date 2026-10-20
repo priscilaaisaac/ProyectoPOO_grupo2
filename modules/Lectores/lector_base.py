@@ -22,3 +22,9 @@ class LectorDatos(ABC):
         y retorna un DataFrame con los datos crudos.
         """
         pass
+
+    def leer(self, origen, **kwargs) -> pd.DataFrame:
+        """
+        Alias de conveniencia y compatibilidad para leer_archivos.
+        """
+        return self.leer_archivos(origen, **kwargs)

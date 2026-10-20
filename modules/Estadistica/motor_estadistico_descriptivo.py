@@ -158,6 +158,10 @@ class MotorEstadisticoDescriptivo(MotorAnalisisBase):
             "capacidad_usada_media": int(suma_cap_usada / n)
         }
 
+
+# Alias de retrocompatibilidad
+MotorEstadisticoVuelos = MotorEstadisticoDescriptivo
+
 __all__ = [
     "MotorEstadisticoDescriptivo",
     "MotorEstadisticoVuelos",
