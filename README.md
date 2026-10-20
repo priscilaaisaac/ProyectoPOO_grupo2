@@ -1,66 +1,97 @@
-# Repositorio de plantilla inicial de Programación Orientada a Objetos
-## 📚 Uso de la plantilla inicial
+✈️ Análisis Histórico de Vuelos para la Toma de Decisiones
 
-> [!NOTE]
-> Una vez que hayan creado su propio repositorio a partir de esta plantilla y lo hayan clonado, **pueden eliminar esta sección técnica** (secciones "Repositorio de plantilla inicial de Programación Orientada a Objetos" y "Uso de la plantilla inicial") y dejar únicamente la documentación correspondiente a su proyecto.
+Sistema integral de ingestión, limpieza, análisis estadístico y simulación comercial para empresas de aviación.
 
-Este repositorio cuenta con una estructura de directorios que permiten tener el código organizado, separando la lógica principal, módulos, aplicaciones y bibliotecas. Además, facilita contar con código reutilizable de forma local.
+Este proyecto integrador de la materia Programación Orientada a Objetos permite a las aerolíneas transformar grandes volúmenes de información histórica cruda proveniente de orígenes heterogéneos (CSV, TXT, Excel, bases de datos SQL) en indicadores útiles para la optimización logística y comercial.
 
-Para lograr esto último, se provee de un directorio `libs` que funciona como un espacio para almacenar bibliotecas de código reutilizable local (por ejemplo, la `biblioteca_ayed_fiuner` de la materia de Algoritmos y Estructuras de Datos).
+A través de un motor backend 100% orientado a objetos y una interfaz visual en Streamlit, el sistema evalúa la calidad de los datos mediante contratos de esquema, ejecuta pipelines dinámicos de saneamiento y simula estrategias de precios dinámicos basados en el riesgo logístico (retrasos y cancelaciones).
 
-### Pasos generales para inicializar
+✨ Características Principales
 
-1 - Crea tu propio repositorio a partir de la plantilla (botón "Use this template" en GitHub).
+Ingestión Polimórfica: Soporte para múltiples formatos de archivo de manera transparente mediante el patrón Factory y Template Method.
 
-2 - Clona el nuevo repositorio en tu computadora.
+Validación por Contrato (Esquema): Verificación estricta de variables obligatorias, tipos de datos y coherencia cronológica antes de permitir el análisis.
 
-3 - En VSCode, abre la carpeta raíz del proyecto clonado. Si les aparece un mensaje indicando que la carpeta se abrió en **Modo restringido**, deben seleccionar **Confiar** en la carpeta.
+Pipeline de Limpieza Dinámico: Módulo interactivo que permite apilar estrategias de imputación (estadísticas o por reglas de negocio) y eliminación de datos anómalos.
 
-4 - Crea un entorno virtual e instala las dependencias necesarias. En el archivo [`deps/requirements.txt`](./deps/requirements.txt) se encuentra configurada la dependencia para importar la biblioteca local desde la carpeta [`libs/biblioteca_ayed_fiuner`](./libs/biblioteca_ayed_fiuner) en modo editable:
+Modelo de Dominio Autónomo: Objetos de tipo Vuelo que calculan de manera independiente sus métricas de duración, factor de ocupación e ingresos.
 
-```bash
-pip install -r .\deps\requirements.txt
-```
+Simulación Estocástica y Precios Dinámicos: Cálculo de riesgo logístico aplicando el Principio de Inversión de Dependencias (DIP), lo que permite escalar hacia futuros modelos predictivos (Machine Learning).
 
-5 - **Variables de Entorno (.env)**: Se recomienda gestionar configuraciones (como URLs o credenciales) mediante variables de entorno usando la librería `python-dotenv`.
-- Como buena práctica, debes mantener actualizado el archivo `.env.example` en la raíz de tu repositorio. En él debes documentar (solo listar los nombres seguidos de '=', sin los valores) todas las variables que tu sistema necesita. De este modo, quien vea el repositorio sabrá qué variables están disponibles para configurar.
-- Para tu desarrollo local, copia ese archivo y renómbralo a `.env` (este archivo está ignorado por Git por seguridad) y asígnale los valores reales.
-- A nivel código, las variables que son obligatorias para el funcionamiento del sistema no deben tener un valor por defecto. Las variables que configuran comportamientos opcionales deben tener un valor default al leerse (ej: `DEBUG=False` si no se configura).
-- Se recomienda fuertemente tener un único archivo centralizado (por ejemplo, `settings.py` o `config.py`) que sea el único lugar donde se leen las variables del `.env`. Cualquier otra parte del sistema que requiera de alguna configuración o variable debe importar directamente desde este archivo, evitando leer el entorno múltiples veces a lo largo del código.
+Exportación Ejecutiva: Generación algorítmica de reportes en formato PDF con gráficos vectoriales utilizando ReportLab.
 
-6 - Ya puedes comenzar a organizar tu código en los directorios [`apps`](./apps), [`modules`](./modules), y utilizar código reutilizable alojando las bibliotecas en el directorio [`libs`](./libs).
+🏗 Arquitectura General y Patrones de Diseño
 
----
+El sistema está estrictamente dividido en dos capas, cumpliendo con el principio de Responsabilidad Única (SRP) y garantizando que la lógica de negocio esté completamente desacoplada de la interfaz gráfica.
 
-# 🐍 Nombre del Proyecto
+Capas del Sistema
 
-Breve descripción del proyecto:
+Capa de Presentación (apps/): Desarrollada en Streamlit. Maneja el estado de la sesión, la navegación (Router) y captura las decisiones del usuario, delegando todo el procesamiento al backend.
 
-Ejemplo: "Este es el proyecto integrador de la materia Programación Orientada a Objetos. Permite [describir funcionalidades principales del sistema]."
+Capa de Dominio y Negocio (modules/): Lógica pura en Python orientada a objetos estructurada en subpaquetes especializados.
 
----
-## 🏗 Arquitectura General
+Patrones de Diseño Aplicados
 
-Explica brevemente cómo está organizado el código (módulos, clases, aplicaciones, etc.)
+Factory Method: Implementado en FactoryLectorDatos para instanciar lectores específicos según el tipo de archivo, y en FabricaVuelos para transformar DataFrames en entidades de dominio.
 
-La estructura de directorios del proyecto se organiza de la siguiente manera:
-- [**`apps/`**](./apps): Scripts principales y puntos de entrada de las aplicaciones.
-- [**`data/`**](./data): Datos utilizados o generados por el proyecto.
-- [**`deps/`**](./deps): Dependencias del proyecto.
-- [**`docs/`**](./docs): Documentación e informes del proyecto.
-- [**`libs/`**](./libs): Bibliotecas locales reutilizables (ej. `biblioteca_ayed_fiuner`).
-- [**`modules/`**](./modules): Lógica de dominio, clases y controladores del sistema orientado a objetos.
-- [**`templates/`**](./templates): Plantillas HTML para el renderizado de vistas (si el proyecto requiere interfaz web).
-- [**`tests/`**](./tests): Pruebas unitarias del proyecto.
+Template Method: Base de la arquitectura de extensibilidad. Utilizado en MotorAnalisisBase, LectorDatos y GeneradorArchivo para definir esqueletos algorítmicos que las clases hijas (MotorEstadisticoDescriptivo, LectorCSV, GeneradorPDF) especializan.
 
----
+Strategy & Pipeline: El PipelineLimpieza apila objetos de tipo OperacionLimpieza (estrategias de imputación) que se ejecutan secuencialmente sobre los datos.
 
-## 🙎‍♀️🙎‍♂️ Autores:
-    - Isaac Priscila Rocio
-    - Andrade Eric Daniel
-## 📅 Cuatrimestre de cursado:
-    1er/2do cuatrimestre del 20xx
+Command: Implementado en SesionAnalisis para serializar y persistir el historial de acciones y simulaciones del analista, permitiendo auditorías.
 
----
+Estructura de Directorios
 
-> **Consejo**: Mantén este README **actualizado** conforme evoluciona el proyecto, y elimina (o añade) secciones según necesites. Esta plantilla es sólo un punto de partida general.
+apps/: Scripts de la interfaz gráfica en Streamlit (app_1.py como entrypoint, modulo_ingestion.py, modulo_analisis.py, etc.).
+
+modules/: Lógica de dominio y reglas de negocio.
+
+Lectores/: Jerarquía de clases para ingestión de datos (LectorCSV, LectorExcel, LectorSQL).
+
+Estadistica/: Motores de análisis y simuladores de precios.
+
+Generador_Archivo/: Exportadores de informes (PDF).
+
+Vuelos.py, fabrica_vuelos.py, validador.py, calidad.py.
+
+data/: Almacenamiento local generado por el sistema (datasets consolidados limpios y base de datos de usuarios JSON).
+
+deps/: Archivo requirements.txt con las dependencias del proyecto.
+
+🚀 Instalación y Uso
+
+Clonar el repositorio:
+
+git clone https://github.com/priscilaaisaac/ProyectoPOO_grupo2.git
+cd ProyectoPOO_grupo2
+
+
+Crear y activar un entorno virtual:
+
+python -m venv .venv
+# En Windows:
+.venv\Scripts\activate
+# En Linux/Mac:
+source .venv/bin/activate
+
+
+Instalar dependencias:
+
+pip install -r deps/requirements.txt
+
+
+Ejecutar la aplicación:
+Inicia el entrypoint del framework Streamlit.
+
+streamlit run apps/app_1.py
+
+
+🙎‍♀️🙎‍♂️ Autores:
+
+Isaac, Priscila Rocio
+
+Andrade, Eric Daniel
+
+📅 Cuatrimestre de cursado:
+
+Programación Orientada a Objetos - Facultad de Ingeniería (UNER) | 2026
