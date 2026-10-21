@@ -1,7 +1,12 @@
 import io
-import docx
 import pandas as pd
 from modules.Generador_Archivo.generador_archivo_base import GeneradorArchivo
+
+try:
+    import docx
+except ModuleNotFoundError:
+    docx = None
+
 
 class GeneradorDOCX(GeneradorArchivo):
     """
@@ -10,6 +15,9 @@ class GeneradorDOCX(GeneradorArchivo):
     """
 
     def generar_archivo(self) -> bytes:
+        if docx is None:
+            raise ModuleNotFoundError("La librería 'python-docx' no está instalada. Instálala con: pip install python-docx")
+
         documento = docx.Document()
         documento.add_heading(self.TITULO_OFICIAL, 0)
         
