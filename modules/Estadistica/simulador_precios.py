@@ -1,11 +1,10 @@
 """
 Módulo para la Simulación Comercial y Optimización de Precios Dinámicos.
-Implementa SimuladorPreciosDinamicos desacoplado de motores específicos (DIP).
+Implementa SimuladorPreciosDinamicos desacoplado de motores específicos.
 """
 
 from typing import Dict, Any, Optional
 from modules.Estadistica.motor_analisis_base import MotorAnalisisBase
-
 
 class SimuladorPreciosDinamicos:
     """

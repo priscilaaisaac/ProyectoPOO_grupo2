@@ -8,6 +8,7 @@ from modules.fabrica_vuelos import FabricaVuelos
 from modules.Estadistica.motor_estadistico_descriptivo import MotorEstadisticoDescriptivo
 from modules.Estadistica.simulador_precios import SimuladorPreciosDinamicos
 from modules.Generador_Archivo.generador_pdf import GeneradorReportePDF
+from modules.Generador_Archivo.generador_docx import GeneradorDOCX
 
 
 COLUMNAS_GRAFICOS = [
@@ -754,28 +755,45 @@ def vista_analisis_estadistico(gestor_usr=None):
             usr_actual = st.session_state.get("usuario_activo")
             nombre_usr = usr_actual.username if usr_actual else "Analista Comercial"
 
-            generador_pdf = GeneradorReportePDF(
-                simulaciones=elementos_guardados["simulaciones"],
-                graficos=elementos_guardados["graficos"],
-                tablas_condicionales=elementos_guardados["tablas_condicionales"],
-                nombre_dataset=nombre_arch,
-                usuario=nombre_usr
-            )
+            formato_elegido = st.selectbox("Formato de exportación", options=["PDF", "DOCX"], key="sel_formato_exportacion")
+
+            if formato_elegido == "PDF":
+                generador = GeneradorReportePDF(
+                    simulaciones=elementos_guardados["simulaciones"],
+    
+                    graficos=elementos_guardados["graficos"],
+                    tablas_condicionales=elementos_guardados["tablas_condicionales"],
+                    nombre_dataset=nombre_arch,
+                    usuario=nombre_usr
+                )
+                mime_type = "application/pdf"
+                extension = "pdf"
+            else:
+                generador = GeneradorDOCX(
+                    simulaciones=elementos_guardados["simulaciones"],
+    
+                    graficos=elementos_guardados["graficos"],
+                    tablas_condicionales=elementos_guardados["tablas_condicionales"],
+                    nombre_dataset=nombre_arch,
+                    usuario=nombre_usr
+                )
+                mime_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                extension = "docx"
 
             try:
-                archivo_pdf = generador_pdf.construir_pdf()
-                nombre_descarga = f"Reporte_Analisis_{nombre_arch}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+                archivo_bytes = generador.generar_archivo()
+                nombre_descarga = f"Reporte_Analisis_{nombre_arch}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.{extension}"
 
                 st.download_button(
-                    label="📥 Exportar Resultados (PDF)",
-                    data=archivo_pdf,
+                    label=f"📥 Exportar Resultados ({formato_elegido})",
+                    data=archivo_bytes,
                     file_name=nombre_descarga,
-                    mime="application/pdf",
+                    mime=mime_type,
                     use_container_width=True,
-                    key="btn_descargar_pdf_global"
+                    key="btn_descargar_reporte_global"
                 )
             except Exception as e:
-                st.error(f"Error al compilar el informe PDF: {e}")
+                st.error(f"Error al compilar el informe {formato_elegido}: {e}")
 
         with col_down2:
             if st.button("🗑️ Limpiar Elementos Guardados de este Archivo", key="btn_limpiar_elementos_pdf"):

@@ -2,6 +2,7 @@ import unittest
 import pandas as pd
 from modules.Generador_Archivo.generador_archivo_base import GeneradorArchivo
 from modules.Generador_Archivo.generador_pdf import GeneradorReportePDF
+from modules.Generador_Archivo.generador_docx import GeneradorDOCX
 
 
 class GeneradorDummy(GeneradorArchivo):
@@ -39,7 +40,7 @@ class TestGeneradorArchivo(unittest.TestCase):
         self.assertTrue(hasattr(gen_pdf, "generar_archivo"))
         self.assertTrue(hasattr(gen_pdf, "construir_pdf"))
 
-    def test_renderizado_dinamico_vacio(self):
+    def test_renderizado_pdf_dinamico_vacio(self):
         """Verifica que un reporte sin secciones se genere válidamente en PDF sin errores."""
         gen_pdf = GeneradorReportePDF(
             simulaciones=[],
@@ -52,8 +53,8 @@ class TestGeneradorArchivo(unittest.TestCase):
         self.assertTrue(isinstance(pdf_bytes, bytes))
         self.assertTrue(pdf_bytes.startswith(b"%PDF"))
 
-    def test_renderizado_dinamico_solo_tablas_condicionales(self):
-        """Verifica que si solo hay tablas condicionales, se renderice dinámicamente."""
+    def test_renderizado_pdf_dinamico_solo_tablas_condicionales(self):
+        """Verifica que si solo hay tablas condicionales, se renderice dinámicamente en PDF."""
         df_dummy = pd.DataFrame({"Franja": ["Mañana"], "Vuelos": [10]})
         gen_pdf = GeneradorReportePDF(
             simulaciones=[],
@@ -66,7 +67,7 @@ class TestGeneradorArchivo(unittest.TestCase):
         self.assertTrue(isinstance(pdf_bytes, bytes))
         self.assertTrue(pdf_bytes.startswith(b"%PDF"))
 
-    def test_renderizado_completo(self):
+    def test_renderizado_pdf_completo(self):
         """Verifica que con todas las secciones pobladas se compile el PDF correctamente."""
         sim = {
             "ruta": "EZE -> MIA",
@@ -97,6 +98,48 @@ class TestGeneradorArchivo(unittest.TestCase):
         pdf_bytes = gen_pdf.generar_archivo()
         self.assertTrue(isinstance(pdf_bytes, bytes))
         self.assertTrue(pdf_bytes.startswith(b"%PDF"))
+
+    def test_generador_docx_herencia_y_contrato(self):
+        """Verifica que GeneradorDOCX herede de GeneradorArchivo y cumpla el contrato."""
+        self.assertTrue(issubclass(GeneradorDOCX, GeneradorArchivo))
+        gen_docx = GeneradorDOCX(usuario="Tester")
+        self.assertEqual(gen_docx.usuario, "Tester")
+        self.assertTrue(hasattr(gen_docx, "generar_archivo"))
+
+    def test_renderizado_docx_vacio(self):
+        """Verifica que un reporte DOCX vacío se compile correctamente con el mensaje de advertencia."""
+        gen_docx = GeneradorDOCX(
+            simulaciones=[],
+            graficos=[],
+            tablas_condicionales=[],
+            nombre_dataset="Dataset Vacio",
+            usuario="Admin"
+        )
+        docx_bytes = gen_docx.generar_archivo()
+        self.assertTrue(isinstance(docx_bytes, bytes))
+        self.assertTrue(docx_bytes.startswith(b"PK\x03\x04"))
+
+    def test_renderizado_docx_con_datos(self):
+        """Verifica que el reporte DOCX se compile correctamente con simulaciones, gráficos y tablas."""
+        sim = {
+            "ruta": "EZE -> MIA",
+            "franja": "Mañana",
+            "precio_base": 300.0,
+            "precio_sugerido": 360.0
+        }
+        df_chart = pd.DataFrame({"Estado": ["A tiempo"], "Cantidad": [10]})
+        df_cond = pd.DataFrame({"Ruta": ["EZE -> MIA"], "Vuelos": [10]})
+
+        gen_docx = GeneradorDOCX(
+            simulaciones=[sim],
+            graficos=[{"titulo": "Distribución Estados", "tabla": df_chart}],
+            tablas_condicionales=[{"tipo": "Condicional Rutas", "dataframe": df_cond}],
+            nombre_dataset="Vuelos_2026",
+            usuario="Operaciones"
+        )
+        docx_bytes = gen_docx.generar_archivo()
+        self.assertTrue(isinstance(docx_bytes, bytes))
+        self.assertTrue(docx_bytes.startswith(b"PK\x03\x04"))
 
 
 if __name__ == "__main__":

@@ -75,6 +75,22 @@
                     "riesgo_logistico_pct": 2.6,
                     "fondo_contingencia_vuelo": 6765.38
                 }
+            },
+            {
+                "timestamp": "2026-10-20 22:47:03",
+                "accion": "Simulación en ruta Todas las rutas | Precio sugerido: $1,846.98",
+                "parametros": {
+                    "tipo_operacion": "SimulacionComercial",
+                    "archivos": "dataset_vuelos_unificado1_limpio.csv",
+                    "archivo": "dataset_vuelos_unificado1_limpio.csv",
+                    "ruta": "Todas las rutas",
+                    "franja": "Todas las franjas",
+                    "ocupacion": "Cualquier ocupación",
+                    "precio_base": 1636.52,
+                    "precio_sugerido": 1846.98,
+                    "riesgo_logistico_pct": 2.6,
+                    "fondo_contingencia_vuelo": 6765.38
+                }
             }
         ]
     }

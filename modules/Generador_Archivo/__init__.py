@@ -9,10 +9,12 @@ from modules.Generador_Archivo.generador_pdf import (
     NumberedCanvas,
     PALETA_COLORES,
 )
+from modules.Generador_Archivo.generador_docx import GeneradorDOCX
 
 __all__ = [
     "GeneradorArchivo",
     "GeneradorReportePDF",
+    "GeneradorDOCX",
     "NumberedCanvas",
     "PALETA_COLORES",
 ]

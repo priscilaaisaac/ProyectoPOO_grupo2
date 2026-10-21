@@ -25,6 +25,7 @@ from modules.Estadistica import motor_estadistico_descriptivo
 from modules.Estadistica import simulador_precios
 from modules.Generador_Archivo import generador_archivo_base
 from modules.Generador_Archivo import generador_pdf
+from modules.Generador_Archivo import generador_docx
 
 sys.modules["modules.lector_base"] = lector_base
 sys.modules["modules.lector_sql"] = lector_sql
@@ -38,6 +39,7 @@ sys.modules["modules.simulador_precios"] = simulador_precios
 sys.modules["modules.analisis_estadistico"] = motor_estadistico_descriptivo
 sys.modules["modules.generador_archivo_base"] = generador_archivo_base
 sys.modules["modules.generador_pdf"] = generador_pdf
+sys.modules["modules.generador_docx"] = generador_docx
 
 __all__ = [
     "Lector",
