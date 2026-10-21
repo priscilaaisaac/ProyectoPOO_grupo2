@@ -261,6 +261,25 @@ def modulo_validacion():
             df_unificado = pd.concat(dfs_canonicos, axis=0, ignore_index=True)
             df_unificado = df_unificado[COLUMNAS_CANONICAS].copy()
 
+            # --- PASO INTERMEDIO: Filtro de Calidad Pos-Validación (Directiva 3) ---
+            # Calcula el porcentaje de atributos faltantes de cada fila.
+            # Elimina automáticamente los registros que tengan 50% o más de sus columnas en estado nulo/NaN.
+            df_unificado, registros_eliminados = EstandarizadorDatos.filtrar_por_umbral_nulos(
+                df_unificado, umbral_pct=0.50
+            )
+
+            if df_unificado.empty:
+                st.error("⚠️ Todos los registros fueron eliminados porque tenían 50% o más de columnas nulas. No es posible continuar.")
+                st.session_state.contrato_validado = False
+                return
+
+            if registros_eliminados > 0:
+                st.info(
+                    f"ℹ️ **Filtro de calidad pos-validación aplicado:** Se eliminaron {registros_eliminados} registro(s) "
+                    f"que presentaban 50% o más de atributos faltantes/nulos. "
+                    f"Continuando con {len(df_unificado)} registro(s) hacia el pipeline de limpieza."
+                )
+
             ruta_unificado = os.path.join(directorio_guardado, f"{nombre_archivo_nuevo}.csv")
             df_unificado.to_csv(ruta_unificado, index=False)
             st.session_state.nombre_archivo_actual = f"{nombre_archivo_nuevo}.csv"

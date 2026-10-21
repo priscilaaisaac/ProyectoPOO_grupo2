@@ -1,15 +1,14 @@
 """
 Módulo Orquestador y Factory de Ingestión y Lectura de Datos.
 Reexporta la clase abstracta LectorDatos, lectores concretos, funciones de utilidad
-(con sus nuevas ubicaciones canónicas en modules/calidad.py y modules/validador.py),
 e implementa FactoryLectorDatos y LectorOrquestadorMultiArchivo.
 """
 
 import csv
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Optional
 import pandas as pd
 
-from modules.Lector.lector_base import LectorDatos
+from modules.Lector.lector_base import LectorDatos, consolidar_dataframes_multiples
 from modules.Lector.lector_texto_delimitado import (
     LectorTextoDelimitado,
     DELIMITADORES_VALIDOS,
@@ -75,7 +74,8 @@ class LectorOrquestadorMultiArchivo(LectorDatos):
     Orquestador polimórfico para leer colecciones de archivos con formatos mixtos
     (ej. combinación de .csv, .txt y .xlsx).
     Delega la lectura de cada archivo a su lector específico correspondiente
-    y consolida los resultados horizontal o verticalmente.
+    y consolida los resultados alineando por ID si se proporcionan columnas_id,
+    o mediante concatenación tradicional.
     """
     EXTENSIONES_SOPORTADAS: Tuple[str, ...] = (
         '.csv', '.txt', '.xlsx', '.xls', '.xltx', '.xltm', '.xlsm'
@@ -84,62 +84,34 @@ class LectorOrquestadorMultiArchivo(LectorDatos):
     def __init__(self):
         self.origen_por_columna: Dict[str, str] = {}
 
-    def leer_archivos(self, origen, nombre_tabla: str = None, modo_unificacion: str = "horizontal", **kwargs) -> pd.DataFrame:
+    def obtener_cabeceras(self, archivo) -> List[str]:
+        """Delega la lectura preliminar de cabeceras al lector correspondiente del archivo."""
+        lector_especifico = FactoryLectorDatos.obtener_lector_por_archivo(archivo)
+        return lector_especifico.obtener_cabeceras(archivo)
+
+    def leer_archivos(
+        self,
+        origen,
+        nombre_tabla: str = None,
+        modo_unificacion: str = "horizontal",
+        columnas_id: Optional[Dict[str, str]] = None,
+        **kwargs
+    ) -> pd.DataFrame:
         archivos = list(origen) if isinstance(origen, (list, tuple)) else [origen]
         lista_dfs: List[Tuple[pd.DataFrame, str]] = []
-        self.origen_por_columna = {}
-
-        modo = kwargs.get('modo_unificacion', modo_unificacion)
-        if kwargs.get('axis') in (0, '0', 'vertical', 'filas'):
-            modo = 'vertical'
-        elif kwargs.get('axis') in (1, '1', 'horizontal', 'columnas'):
-            modo = 'horizontal'
-
-        es_horizontal = modo not in (0, '0', 'vertical', 'filas')
 
         for archivo in archivos:
             lector_especifico = FactoryLectorDatos.obtener_lector_por_archivo(archivo)
-            df_indiv = lector_especifico.leer_archivos(archivo, **kwargs)
+            df_indiv = lector_especifico._leer(archivo, **kwargs) if hasattr(lector_especifico, '_leer') else lector_especifico.leer_archivos(archivo, **kwargs)
             nombre_archivo = getattr(archivo, 'name', str(archivo))
             lista_dfs.append((df_indiv, nombre_archivo))
 
-        if not lista_dfs:
-            return pd.DataFrame()
-
-        if es_horizontal:
-            columnas_existentes = set()
-            dfs_a_unir = []
-            for df_indiv, nombre_arch in lista_dfs:
-                nuevas_columnas = []
-                for col in df_indiv.columns:
-                    col_final = col
-                    if col_final in columnas_existentes:
-                        contador = 2
-                        candidato = f"{col} ({contador})"
-                        while candidato in columnas_existentes:
-                            contador += 1
-                            candidato = f"{col} ({contador})"
-                        col_final = candidato
-
-                    columnas_existentes.add(col_final)
-                    nuevas_columnas.append(col_final)
-                    self.origen_por_columna[col_final] = nombre_arch
-
-                df_indiv.columns = nuevas_columnas
-                dfs_a_unir.append(df_indiv)
-
-            df_consolidado = pd.concat(dfs_a_unir, axis=1)
-        else:
-            dfs_a_unir = []
-            for df_indiv, nombre_arch in lista_dfs:
-                for col in df_indiv.columns:
-                    if col not in self.origen_por_columna:
-                        self.origen_por_columna[col] = nombre_arch
-                dfs_a_unir.append(df_indiv)
-
-            df_consolidado = pd.concat(dfs_a_unir, axis=0, ignore_index=True)
-
-        df_consolidado.attrs['origen_por_columna'] = self.origen_por_columna
+        df_consolidado, self.origen_por_columna = consolidar_dataframes_multiples(
+            lista_dfs,
+            modo_unificacion=modo_unificacion,
+            columnas_id=columnas_id,
+            **kwargs
+        )
         return df_consolidado
 
 
@@ -190,6 +162,12 @@ class FactoryLectorDatos:
         else:
             raise ValueError(f"Extensión de archivo no soportada: {nombre_archivo}")
 
+    @staticmethod
+    def obtener_cabeceras_archivo(archivo) -> List[str]:
+        """Obtiene las cabeceras de un archivo delegando en su lector correspondiente."""
+        lector = FactoryLectorDatos.obtener_lector_por_archivo(archivo)
+        return lector.obtener_cabeceras(archivo)
+
 
 LectorCSV = LectorTextoDelimitado
 LectorTXT = LectorTextoDelimitado
@@ -206,4 +184,5 @@ __all__ = [
     "LectorSQL",
     "LectorOrquestadorMultiArchivo",
     "FactoryLectorDatos",
+    "consolidar_dataframes_multiples",
 ]

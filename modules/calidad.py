@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+from typing import Tuple
 
 VALORES_VACIOS = ["", " ", "   ", "nan", "NaN", "null", "NULL", "None", "none", "N/A", "n/a", "-", "."]
 
@@ -43,10 +44,31 @@ class EstandarizadorDatos:
 
     sanear_espacios = sanear_dataframe_individual
 
+    @staticmethod
+    def filtrar_por_umbral_nulos(df: pd.DataFrame, umbral_pct: float = 0.50) -> Tuple[pd.DataFrame, int]:
+        """
+        Calcula el porcentaje de atributos faltantes de cada fila y elimina automáticamente
+        los registros que tengan un porcentaje de nulos mayor o igual al umbral especificado (ej. 0.50 = 50%).
+        Retorna una tupla (df_filtrado, cantidad_eliminados).
+        """
+        if df is None or df.empty:
+            return df, 0
+        df_norm = EstandarizadorDatos.normalizar(df)
+        pct_nulos = df_norm.isna().mean(axis=1)
+        mascara = pct_nulos < umbral_pct
+        eliminados = int((~mascara).sum())
+        df_filtrado = df[mascara].reset_index(drop=True)
+        return df_filtrado, eliminados
+
 
 def sanear_dataframe_individual(df: pd.DataFrame) -> pd.DataFrame:
     """Función de compatibilidad a nivel de módulo para saneamiento de espacios."""
     return EstandarizadorDatos.sanear_dataframe_individual(df)
+
+
+def filtrar_por_umbral_nulos(df: pd.DataFrame, umbral_pct: float = 0.50) -> Tuple[pd.DataFrame, int]:
+    """Función de conveniencia para filtrar registros con porcentaje de nulos >= umbral."""
+    return EstandarizadorDatos.filtrar_por_umbral_nulos(df, umbral_pct=umbral_pct)
 
 
 class ReporteCalidad:

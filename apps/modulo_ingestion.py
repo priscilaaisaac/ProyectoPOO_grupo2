@@ -75,10 +75,46 @@ def modulo_ingestion():
                 st.session_state.archivos_procesados = False
                 st.session_state.archivos_subidos_previos = nombres_actuales
 
+            columnas_id_seleccionadas = {}
+            # Directiva 1: Selección de IDs en la Interfaz (Pre-Continuar)
+            if len(archivos_activos) >= 2:
+                st.markdown("##### Selección de Claves de Unión (IDs)")
+                st.info("Seleccione la columna ID para cada archivo para alinear y consolidar los registros correspondientes:")
+                for arch in archivos_activos:
+                    nombre_arch = getattr(arch, "name", str(arch))
+                    try:
+                        lector_arch = FactoryLectorDatos.obtener_lector_por_archivo(arch)
+                        cabeceras_arch = lector_arch.obtener_cabeceras(arch)
+                    except Exception:
+                        cabeceras_arch = []
+
+                    if not cabeceras_arch:
+                        cabeceras_arch = ["(Sin columnas)"]
+
+                    # Sugerir columna ID si coincide con 'id', 'id_vuelo', etc.
+                    idx_defecto = 0
+                    for i_c, c_nom in enumerate(cabeceras_arch):
+                        c_low = str(c_nom).lower()
+                        if c_low == "id" or "id_vuelo" in c_low or "codigo" in c_low or "id" in c_low:
+                            idx_defecto = i_c
+                            break
+
+                    col_id_elegida = st.selectbox(
+                        f"Seleccione la columna ID para el archivo {nombre_arch}",
+                        options=cabeceras_arch,
+                        index=idx_defecto,
+                        key=f"id_col_{nombre_arch}"
+                    )
+                    columnas_id_seleccionadas[nombre_arch] = col_id_elegida
+
+            # Directiva 2: Consolidación por Alineación de IDs al presionar 'Continuar'
             if st.button("Continuar", key="btn_continuar_csv", use_container_width=True):
                 try:
                     lector = FactoryLectorDatos.obtener_lector_por_archivo(archivos_activos)
-                    df_crudo = lector.leer(origen=archivos_activos)
+                    df_crudo = lector.leer_archivos(
+                        origen=archivos_activos,
+                        columnas_id=columnas_id_seleccionadas if len(archivos_activos) >= 2 else None
+                    )
                     df_saneado = EstandarizadorDatos.sanear_dataframe_individual(df_crudo)
                     df_consolidado = ValidadorEsquema.validar_estructura_tabular(df_saneado)
 
@@ -101,6 +137,7 @@ def modulo_ingestion():
                         st.session_state.archivos_dfs = {"dataset_consolidado": df_consolidado}
                         st.session_state.archivos_crudos_temporales = archivos_activos
                         st.session_state.archivos_procesados = True
+                        st.session_state.columnas_id_seleccionadas = columnas_id_seleccionadas
                         st.success(f"Se cargaron y consolidaron {len(archivos_activos)} archivo(s) exitosamente. Ya puede mapear los atributos abajo.")
                         st.rerun()
                 except Exception as e:
@@ -113,7 +150,6 @@ def modulo_ingestion():
 
             # Mostrar vista previa y lista de archivos procesados únicamente tras presionar 'Continuar'
             if st.session_state.get("archivos_procesados", False) and st.session_state.get("df_crudo_completo") is not None:
-                # 5. Botón 'X' para descartar/eliminar un archivo específico de los ya procesados
                 st.markdown("##### Archivos incorporados al dataset:")
                 arch_a_quitar = None
                 for arch in list(st.session_state.get("archivos_crudos_temporales", [])):
@@ -136,7 +172,15 @@ def modulo_ingestion():
                     if archivos_restantes:
                         try:
                             lector = FactoryLectorDatos.obtener_lector_por_archivo(archivos_restantes)
-                            df_crudo_nuevo = lector.leer(origen=archivos_restantes)
+                            cols_id_rest = {
+                                getattr(a, 'name', str(a)): st.session_state.get(f"id_col_{getattr(a, 'name', str(a))}")
+                                for a in archivos_restantes
+                            } if len(archivos_restantes) >= 2 else None
+
+                            df_crudo_nuevo = lector.leer_archivos(
+                                origen=archivos_restantes,
+                                columnas_id=cols_id_rest
+                            )
                             df_saneado_nuevo = EstandarizadorDatos.sanear_dataframe_individual(df_crudo_nuevo)
                             df_nuevo = ValidadorEsquema.validar_estructura_tabular(df_saneado_nuevo)
                             cols_nuevas = list(df_nuevo.columns)
@@ -148,6 +192,7 @@ def modulo_ingestion():
                             st.session_state.archivos_dfs = {"dataset_consolidado": df_nuevo}
                             st.session_state.archivos_crudos_temporales = archivos_restantes
                             st.session_state.archivos_subidos_previos = [a.name for a in archivos_restantes]
+                            st.session_state.columnas_id_seleccionadas = cols_id_rest
                             st.session_state.archivos_procesados = True
 
                             # Limpiar llaves de mapeo de columnas eliminadas
@@ -166,6 +211,7 @@ def modulo_ingestion():
                         st.session_state.archivos_dfs = {}
                         st.session_state.archivos_crudos_temporales = []
                         st.session_state.archivos_subidos_previos = []
+                        st.session_state.columnas_id_seleccionadas = {}
                         for k in list(st.session_state.keys()):
                             if k.startswith(("single_req_", "single_opc_", "map_")):
                                 del st.session_state[k]
@@ -182,6 +228,7 @@ def modulo_ingestion():
             st.session_state.origen_por_columna = {}
             st.session_state.archivos_crudos_temporales = []
             st.session_state.archivos_dfs = {}
+            st.session_state.columnas_id_seleccionadas = {}
 
     # SQL COMO ORIGEN DE LOS DATOS
     elif st.session_state.origen_datos == "SQL":

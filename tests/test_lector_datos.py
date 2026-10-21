@@ -11,7 +11,7 @@ from modules.Lector.lector import (
     LectorOrquestadorMultiArchivo,
     FactoryLectorDatos
 )
-from modules.calidad import sanear_dataframe_individual
+from modules.calidad import sanear_dataframe_individual, EstandarizadorDatos
 
 
 class MockUploadedFile(io.BytesIO):
@@ -293,7 +293,6 @@ class TestLectorDatos(unittest.TestCase):
 
         # 4. Validar existencia en modules/validador y modules/calidad
         from modules.validador import ValidadorEsquema
-        from modules.calidad import EstandarizadorDatos
 
         df_prueba = pd.DataFrame({"  col_a  ": [" val "], " col_b": [10]})
         df_saneado = EstandarizadorDatos.sanear_dataframe_individual(df_prueba)
@@ -303,8 +302,106 @@ class TestLectorDatos(unittest.TestCase):
         df_validado = ValidadorEsquema.validar_estructura_tabular(df_saneado)
         self.assertEqual(list(df_validado.columns), ["col_a", "col_b"])
 
+    def test_obtener_cabeceras_temporal(self):
+        """Directiva 1: Verifica que obtener_cabeceras lea los encabezados sin alterar el puntero."""
+        contenido_csv = b"id_vuelo,origen,destino\nFL-1,JFK,MIA\n"
+        arch_csv = MockUploadedFile(contenido_csv, "vuelos.csv")
+        lector_csv = LectorCSV()
+        cabeceras = lector_csv.obtener_cabeceras(arch_csv)
+        self.assertEqual(cabeceras, ["id_vuelo", "origen", "destino"])
+        self.assertEqual(arch_csv.tell(), 0, "El puntero debe permanecer al inicio con seek(0)")
+
+        # Excel
+        buf_excel = io.BytesIO()
+        pd.DataFrame({"codigo": [1], "precio": [100]}).to_excel(buf_excel, index=False, engine="openpyxl")
+        buf_excel.seek(0)
+        arch_excel = MockUploadedFile(buf_excel.getvalue(), "vuelos.xlsx")
+        lector_excel = LectorExcel()
+        cabeceras_excel = lector_excel.obtener_cabeceras(arch_excel)
+        self.assertEqual(cabeceras_excel, ["codigo", "precio"])
+        self.assertEqual(arch_excel.tell(), 0)
+
+    def test_consolidacion_alineacion_ids_desfasados(self):
+        """
+        Directiva 2: Si el mismo ID existe en distintos archivos pero en posiciones distintas
+        (ej. fila 0 en arch1 y fila 2 en arch2), se alinean primero por ID y se unen horizontalmente.
+        """
+        arch1 = MockUploadedFile(
+            b"id_vuelo,origen,precio\nFL-1,JFK,100\nFL-2,EZE,200\n",
+            "arch1.csv"
+        )
+        arch2 = MockUploadedFile(
+            b"codigo,capacidad,precio\nFL-2,150,220\nFL-99,80,500\nFL-1,180,110\n",
+            "arch2.csv"
+        )
+
+        lector = LectorOrquestadorMultiArchivo()
+        cols_id = {"arch1.csv": "id_vuelo", "arch2.csv": "codigo"}
+        df = lector.leer_archivos([arch1, arch2], columnas_id=cols_id)
+
+        # FL-1 debe estar alineado con FL-1 a pesar de estar en filas desfasadas
+        fila_fl1 = df[df["id_vuelo"] == "FL-1"].iloc[0]
+        self.assertEqual(fila_fl1["origen"], "JFK")
+        self.assertEqual(fila_fl1["capacidad"], 180)
+        self.assertEqual(fila_fl1["precio"], 100)
+        self.assertEqual(fila_fl1["precio (2)"], 110)
+
+        # FL-2 debe estar alineado con FL-2
+        fila_fl2 = df[df["id_vuelo"] == "FL-2"].iloc[0]
+        self.assertEqual(fila_fl2["origen"], "EZE")
+        self.assertEqual(fila_fl2["capacidad"], 150)
+        self.assertEqual(fila_fl2["precio"], 200)
+        self.assertEqual(fila_fl2["precio (2)"], 220)
+
+    def test_consolidacion_ids_no_coincidentes_verticales(self):
+        """
+        Directiva 2: IDs únicos en un archivo se concatenan verticalmente rellenando con NaN
+        las columnas del otro archivo.
+        """
+        arch1 = MockUploadedFile(
+            b"id_vuelo,origen\nFL-1,JFK\nFL-SOLO-1,MIA\n",
+            "arch1.csv"
+        )
+        arch2 = MockUploadedFile(
+            b"id_vuelo,destino\nFL-1,MAD\nFL-SOLO-2,BCN\n",
+            "arch2.csv"
+        )
+
+        lector = LectorCSV()
+        cols_id = {"arch1.csv": "id_vuelo", "arch2.csv": "id_vuelo"}
+        df = lector.leer_archivos([arch1, arch2], columnas_id=cols_id)
+
+        # FL-SOLO-1 solo existe en arch1: destino debe ser NaN
+        fila_solo1 = df[df["id_vuelo"] == "FL-SOLO-1"].iloc[0]
+        self.assertEqual(fila_solo1["origen"], "MIA")
+        self.assertTrue(pd.isna(fila_solo1["destino"]))
+
+        # FL-SOLO-2 solo existe en arch2: origen debe ser NaN
+        fila_solo2 = df[df["id_vuelo"] == "FL-SOLO-2"].iloc[0]
+        self.assertEqual(fila_solo2["destino"], "BCN")
+        self.assertTrue(pd.isna(fila_solo2["origen"]))
+
+    def test_filtro_calidad_50_pct_nulos(self):
+        """
+        Directiva 3: Elimina automáticamente filas con >= 50% de atributos nulos/NaN.
+        """
+        # 4 columnas:
+        # Fila 0: 0% nulos -> Sobrevive
+        # Fila 1: 1 de 4 nulos (25%) -> Sobrevive
+        # Fila 2: 2 de 4 nulos (50%) -> Eliminada
+        # Fila 3: 3 de 4 nulos (75%) -> Eliminada
+        df_test = pd.DataFrame({
+            "a": ["OK", "OK", "OK", None],
+            "b": ["OK", "OK", None, None],
+            "c": ["OK", "OK", None, None],
+            "d": ["OK", None, "OK", "OK"]
+        })
+
+        df_filtrado, eliminados = EstandarizadorDatos.filtrar_por_umbral_nulos(df_test, umbral_pct=0.50)
+        self.assertEqual(eliminados, 2)
+        self.assertEqual(len(df_filtrado), 2)
+        self.assertEqual(list(df_filtrado.index), [0, 1])
+
 
 if __name__ == "__main__":
     unittest.main()
-
-
