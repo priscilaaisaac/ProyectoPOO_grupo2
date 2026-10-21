@@ -17,12 +17,13 @@ from apps.modulo_ingestion import modulo_ingestion
 from apps.modulo_validacion import modulo_validacion
 from apps.modulo_limpieza import modulo_limpieza_y_dominio
 from apps.modulo_analisis import vista_analisis_estadistico
+from apps.modulo_manual import vista_manual_funcionamiento
 
 def inicializar_estado():
     """Inicializa todas las variables de sesión globales necesarias."""
     claves_iniciales = {
         "usuario_activo": None, 
-        "origen_datos": None,
+        "origen_datos": "CSV",
         "df_crudo": None,
         "df_crudo_completo": None, 
         "columnas_disponibles": [],
@@ -36,7 +37,8 @@ def inicializar_estado():
         "df_estandarizado": None,
         "archivos_procesados": False,
         "nombre_archivo_actual": None,
-        "archivo_es_limpio": False
+        "archivo_es_limpio": False,
+        "mostrar_manual": False
     }
     for clave, valor in claves_iniciales.items():
         if clave not in st.session_state:
@@ -85,7 +87,9 @@ def main():
     modulo_usuario(gestor_usr)
     
     # Lógica de navegación principal (Router)
-    if st.session_state.get("mostrar_analisis", False):
+    if st.session_state.get("mostrar_manual", False):
+        vista_manual_funcionamiento()
+    elif st.session_state.get("mostrar_analisis", False):
         vista_analisis_estadistico(gestor_usr)
     elif st.session_state.get("mostrar_perfil", False) and st.session_state.usuario_activo:
         vista_perfil_pantalla_completa(gestor_usr)

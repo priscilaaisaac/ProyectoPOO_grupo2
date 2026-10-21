@@ -15,7 +15,6 @@ from modules.Lector.lector_texto_delimitado import (
     detectar_separador,
 )
 from modules.Lector.lector_excel import LectorExcel
-from modules.Lector.lector_sql import LectorSQL
 
 
 def detectar_formato(origen) -> Tuple[str, bool]:
@@ -120,15 +119,13 @@ class FactoryLectorDatos:
     def obtener_lector(tipo_origen: str) -> LectorDatos:
         """
         Retorna la instancia adecuada según el tipo de origen.
-        tipo_origen debe ser 'CSV', 'TXT', 'TEXTO_DELIMITADO', 'EXCEL' o 'SQL'.
+        tipo_origen debe ser 'CSV', 'TXT', 'TEXTO_DELIMITADO' o 'EXCEL'.
         """
         tipo = str(tipo_origen).upper()
         if tipo in ("CSV", "TXT", "TEXTO_DELIMITADO"):
             return LectorTextoDelimitado()
         elif tipo == "EXCEL":
             return LectorExcel()
-        elif tipo == "SQL":
-            return LectorSQL()
         else:
             raise ValueError(f"Tipo de origen desconocido: {tipo_origen}")
 
@@ -181,7 +178,6 @@ __all__ = [
     "LectorCSV",
     "LectorTXT",
     "LectorExcel",
-    "LectorSQL",
     "LectorOrquestadorMultiArchivo",
     "FactoryLectorDatos",
     "consolidar_dataframes_multiples",

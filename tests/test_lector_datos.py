@@ -3,7 +3,7 @@ Suite exhaustiva de pruebas unitarias para el subsistema de Ingestión y Lectura
 (modules.Lector).
 
 Cumple estrictamente con:
-- Aislamiento absoluto (100% en memoria mediante io.StringIO, io.BytesIO y sqlite:///:memory:).
+- Aislamiento absoluto (100% en memoria mediante io.StringIO, io.BytesIO).
 - Exclusión total de UI y dependencias de Streamlit.
 - Cobertura integral (>= 70%, buscando >= 95%):
   - LectorDatos (interfaz abstracta, alias .leer(), lectura de cabeceras).
@@ -11,13 +11,11 @@ Cumple estrictamente con:
     descarte de '_ocurrencia', prevención de producto cartesiano, concatenación horizontal y vertical).
   - LectorTextoDelimitado (detección de delimitadores ',', ';', '\t', '|', ' ', latin-1, malformed).
   - LectorExcel (lectura con openpyxl en memoria BytesIO, cabeceras, múltiples hojas).
-  - LectorSQL (lectura con sqlite:///:memory:, validación de nombre_tabla).
   - FactoryLectorDatos y LectorOrquestadorMultiArchivo (resolución polimórfica homogénea y mixta).
   - detectar_formato y detectar_separador.
 """
 
 import io
-import sqlite3
 import pytest
 import pandas as pd
 from typing import List, Tuple
@@ -29,7 +27,6 @@ from modules.Lector.lector_texto_delimitado import (
     DELIMITADORES_VALIDOS,
 )
 from modules.Lector.lector_excel import LectorExcel
-from modules.Lector.lector_sql import LectorSQL
 from modules.Lector.lector import (
     LectorCSV,
     LectorTXT,
@@ -512,40 +509,6 @@ class TestLectorExcel:
         assert "tramo2" in df_res.columns
 
 
-# =====================================================================
-# 5. Pruebas para LectorSQL
-# =====================================================================
-
-class TestLectorSQL:
-    """Pruebas del lector de bases de datos relacionales SQL con SQLite en memoria."""
-
-    def test_falta_nombre_tabla_lanza_value_error(self):
-        lector = LectorSQL()
-        with pytest.raises(ValueError, match="Se requiere el nombre de la tabla"):
-            lector.leer_archivos("sqlite:///:memory:", nombre_tabla=None)
-
-    def test_lectura_tabla_sqlite_en_memoria(self):
-        # Creamos una base de datos SQLite en memoria con datos
-        uri = "sqlite://"  # SQLite in-memory engine por defecto en SQLAlchemy
-        conn = sqlite3.connect(":memory:")
-        cursor = conn.cursor()
-        cursor.execute("CREATE TABLE vuelos_test (id INTEGER, precio REAL);")
-        cursor.execute("INSERT INTO vuelos_test VALUES (1, 150.0);")
-        cursor.execute("INSERT INTO vuelos_test VALUES (2, 250.0);")
-        conn.commit()
-
-        # Usamos una base sqlite URI temporal válida para sqlalchemy
-        # Mockeamos pd.read_sql para aislar completamente
-        lector = LectorSQL()
-        df_esperado = pd.DataFrame({"id": [1, 2], "precio": [150.0, 250.0]})
-
-        import unittest.mock as mock
-        with mock.patch("modules.Lector.lector_sql.create_engine") as mock_engine:
-            with mock.patch("pandas.read_sql", return_value=df_esperado) as mock_read:
-                df_res = lector.leer_archivos("sqlite:///:memory:", nombre_tabla="vuelos_test")
-                assert len(df_res) == 2
-                assert list(df_res["id"]) == [1, 2]
-                mock_read.assert_called_once()
 
 
 # =====================================================================
@@ -560,7 +523,8 @@ class TestFactoryYOrquestador:
         assert isinstance(FactoryLectorDatos.obtener_lector("TXT"), LectorTextoDelimitado)
         assert isinstance(FactoryLectorDatos.obtener_lector("TEXTO_DELIMITADO"), LectorTextoDelimitado)
         assert isinstance(FactoryLectorDatos.obtener_lector("EXCEL"), LectorExcel)
-        assert isinstance(FactoryLectorDatos.obtener_lector("SQL"), LectorSQL)
+        with pytest.raises(ValueError, match="Tipo de origen desconocido"):
+            FactoryLectorDatos.obtener_lector("SQL")
 
         with pytest.raises(ValueError, match="Tipo de origen desconocido"):
             FactoryLectorDatos.obtener_lector("FORMATO_DESCONOCIDO")

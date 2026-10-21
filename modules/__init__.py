@@ -16,7 +16,6 @@ sys.modules["modules.Lectores"] = Lector
 
 # Retrocompatibilidad de módulos movidos a subcarpetas
 from modules.Lector import lector_base
-from modules.Lector import lector_sql
 from modules.Lector import lector_excel
 from modules.Lector import lector_texto_delimitado
 from modules.Lector import lector
@@ -28,7 +27,6 @@ from modules.Generador_Archivo import generador_pdf
 from modules.Generador_Archivo import generador_docx
 
 sys.modules["modules.lector_base"] = lector_base
-sys.modules["modules.lector_sql"] = lector_sql
 sys.modules["modules.lector_excel"] = lector_excel
 sys.modules["modules.lector_texto_delimitado"] = lector_texto_delimitado
 sys.modules["modules.lector"] = lector

@@ -19,6 +19,7 @@ def limpiar_estado_analisis():
     st.session_state.archivo_es_limpio = False
     st.session_state.modo_limpieza_directa = False
     st.session_state.mostrar_analisis = False
+    st.session_state.mostrar_manual = False
     st.session_state.nombre_archivo_actual = None
     st.session_state.lista_vuelos = []
     st.session_state.columnas_disponibles = []
@@ -67,6 +68,13 @@ def modulo_usuario(gestor_usr):
                         st.rerun()
                     except ValueError as e:
                         st.sidebar.error(str(e))
+
+        st.sidebar.divider()
+        if st.sidebar.button("📖 Manual de Funcionamiento", use_container_width=True, key="btn_nav_manual_unauth"):
+            st.session_state.mostrar_manual = True
+            st.session_state.mostrar_perfil = False
+            st.session_state.mostrar_analisis = False
+            st.rerun()
     else:
         usuario_actual = st.session_state.usuario_activo
         st.sidebar.markdown(f"**Usuario:** `{usuario_actual.username}`")
@@ -80,6 +88,13 @@ def modulo_usuario(gestor_usr):
         
         if st.sidebar.button("📂 Ver mi Perfil y Archivos Guardados", use_container_width=True):
             st.session_state.mostrar_perfil = True
+            st.session_state.mostrar_analisis = False
+            st.session_state.mostrar_manual = False
+            st.rerun()
+
+        if st.sidebar.button("📖 Manual de Funcionamiento", use_container_width=True, key="btn_nav_manual_sidebar"):
+            st.session_state.mostrar_manual = True
+            st.session_state.mostrar_perfil = False
             st.session_state.mostrar_analisis = False
             st.rerun()
 
@@ -143,6 +158,7 @@ def vista_perfil_pantalla_completa(gestor_usr):
                             st.session_state.mostrar_perfil = False
                             st.session_state.modo_limpieza_directa = True
                             st.session_state.mostrar_analisis = False
+                            st.session_state.mostrar_manual = False
                             st.rerun()
                         except Exception as e:
                             st.error(f"Error al cargar el archivo crudo: {e}")
@@ -204,6 +220,7 @@ def vista_perfil_pantalla_completa(gestor_usr):
                             st.session_state.modo_limpieza_directa = True
                             st.session_state.archivo_es_limpio = True
                             st.session_state.mostrar_analisis = False
+                            st.session_state.mostrar_manual = False
                             st.rerun()
                         except Exception as e:
                             st.error(f"Error al cargar el archivo limpio para visualización: {e}")
