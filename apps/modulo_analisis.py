@@ -355,6 +355,27 @@ def vista_analisis_estadistico(gestor_usr=None):
 
         # Renderizado condicional según disponibilidad de muestra
         if resultado_sim.get("muestra_tamano", 0) > 0:
+            # Cálculo condicional del delta para el indicador de Riesgo Logístico
+            recargo_riesgo = round(resultado_sim.get("recargo_riesgo_monetario", 0.0), 2)
+            if recargo_riesgo < 0:
+                delta_riesgo = f"-${abs(recargo_riesgo):,.2f}"
+            elif recargo_riesgo > 0:
+                delta_riesgo = f"+${abs(recargo_riesgo):,.2f}"
+            else:
+                delta_riesgo = None
+
+            # Cálculo condicional del delta para el indicador de Precio Dinámico Sugerido
+            diff_precio = round(resultado_sim["precio_sugerido"] - resultado_sim["precio_base"], 2)
+            pct_ajuste = abs(resultado_sim.get("ajuste_porcentual_total", 0.0))
+            mon_ajuste = abs(resultado_sim.get("ajuste_total_monetario", 0.0))
+
+            if diff_precio < 0:
+                delta_precio = f"-{pct_ajuste}% (-${mon_ajuste:,.2f})"
+            elif diff_precio > 0:
+                delta_precio = f"+{pct_ajuste}% (${mon_ajuste:,.2f})"
+            else:
+                delta_precio = "0.0%"
+
             # Métricas de salida en tarjetas visuales de alto impacto
             col_m1, col_m2, col_m3, col_m4, col_m5 = st.columns(5)
             with col_m1:
@@ -364,12 +385,12 @@ def vista_analisis_estadistico(gestor_usr=None):
             with col_m3:
                 st.metric("P(Cancelación)", f"{resultado_sim['p_cancelado_pct']}%", help="Probabilidad condicionada de cancelación")
             with col_m4:
-                st.metric("Riesgo Logístico", f"{resultado_sim['riesgo_logistico_pct']}%", delta=f"+${resultado_sim['recargo_riesgo_monetario']:,.2f}")
+                st.metric("Riesgo Logístico", f"{resultado_sim['riesgo_logistico_pct']}%", delta=delta_riesgo)
             with col_m5:
                 st.metric(
                     "✨ Precio Dinámico Sugerido",
                     f"${resultado_sim['precio_sugerido']:,.2f}",
-                    delta=f"+{resultado_sim['ajuste_porcentual_total']}% (${resultado_sim['ajuste_total_monetario']:,.2f})"
+                    delta=delta_precio
                 )
 
             # Diagnóstico Comercial con formato de moneda limpio y seguro contra KaTeX
