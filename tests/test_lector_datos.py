@@ -402,6 +402,41 @@ class TestLectorDatos(unittest.TestCase):
         self.assertEqual(len(df_filtrado), 2)
         self.assertEqual(list(df_filtrado.index), [0, 1])
 
+    def test_consolidacion_alineacion_secuencial_sin_producto_cartesiano(self):
+        """
+        Verifica que al existir IDs duplicados en ambos archivos, se use la clave compuesta
+        [ID, '_ocurrencia'] evitando la explosión del producto cartesiano, y que '_ocurrencia'
+        sea eliminada del resultado final.
+        """
+        arch1 = MockUploadedFile(
+            b"id_vuelo,origen,precio\nFL-1,JFK,100\nFL-1,EWR,110\nFL-2,EZE,200\n",
+            "arch1.csv"
+        )
+        arch2 = MockUploadedFile(
+            b"id_vuelo,capacidad,precio\nFL-1,180,105\nFL-1,190,115\nFL-3,200,300\n",
+            "arch2.csv"
+        )
+
+        lector = LectorCSV()
+        cols_id = {"arch1.csv": "id_vuelo", "arch2.csv": "id_vuelo"}
+        df = lector.leer_archivos([arch1, arch2], columnas_id=cols_id)
+
+        # Sin la clave temporal _ocurrencia, los 2 FL-1 de arch1 y los 2 FL-1 de arch2
+        # generarían 2 * 2 = 4 filas para FL-1 (total 6 filas).
+        # Con _ocurrencia, debe haber exactamente 2 filas para FL-1 (total 4 filas).
+        self.assertEqual(len(df), 4)
+        self.assertNotIn("_ocurrencia", df.columns, "La columna temporal _ocurrencia debe ser eliminada")
+
+        # Verificar coincidencias 1 a 1 de las ocurrencias
+        filas_fl1 = df[df["id_vuelo"] == "FL-1"]
+        self.assertEqual(len(filas_fl1), 2)
+        # Ocurrencia 0
+        self.assertEqual(filas_fl1.iloc[0]["origen"], "JFK")
+        self.assertEqual(filas_fl1.iloc[0]["capacidad"], 180)
+        # Ocurrencia 1
+        self.assertEqual(filas_fl1.iloc[1]["origen"], "EWR")
+        self.assertEqual(filas_fl1.iloc[1]["capacidad"], 190)
+
 
 if __name__ == "__main__":
     unittest.main()

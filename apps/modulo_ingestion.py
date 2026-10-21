@@ -7,10 +7,109 @@ except ModuleNotFoundError:
 
     st = _StreamlitUnavailable()
 
+from typing import List, Tuple, Dict, Optional
 import pandas as pd
 from modules.Lector.lector import FactoryLectorDatos
 from modules.calidad import EstandarizadorDatos
 from modules.validador import ValidadorEsquema
+
+
+def consolidar_cruce_con_ocurrencia(
+    lista_dfs: List[Tuple[pd.DataFrame, str]],
+    columnas_id: Dict[str, str]
+) -> Tuple[pd.DataFrame, Dict[str, str]]:
+    """
+    Consolida una lista de tuplas (df, nombre_archivo) mediante pd.merge(how='outer')
+    utilizando una clave compuesta [ID, '_ocurrencia'] para prevenir productos cartesianos.
+
+    Pasos aplicados:
+    1. Creación de clave temporal: df['_ocurrencia'] = df.groupby(columna_id_seleccionada).cumcount()
+    2. Cruce seguro (Merge): pd.merge(how='outer', left_on=[id_izq, '_ocurrencia'], right_on=[id_der, '_ocurrencia'])
+    3. Limpieza de variables temporales: df_final.drop(columns=['_ocurrencia'], inplace=True, errors='ignore')
+    4. Conservar registros únicos rellenando el resto con nulos.
+    """
+    if not lista_dfs:
+        return pd.DataFrame(), {}
+
+    if len(lista_dfs) == 1:
+        df_indiv, nombre_arch = lista_dfs[0]
+        origen_map = {str(col): nombre_arch for col in df_indiv.columns}
+        df_res = df_indiv.copy()
+        df_res.attrs['origen_por_columna'] = origen_map
+        return df_res, origen_map
+
+    cols_existentes = set()
+    origen_por_columna: Dict[str, str] = {}
+
+    df_base, nom_base = lista_dfs[0]
+    df_acc = df_base.copy()
+
+    id_izq = (
+        columnas_id.get(nom_base)
+        or next((c for c in df_acc.columns if "id" in str(c).lower()), df_acc.columns[0])
+    )
+    if id_izq not in df_acc.columns:
+        id_izq = df_acc.columns[0]
+
+    for c in df_acc.columns:
+        cols_existentes.add(c)
+        origen_por_columna[c] = nom_base
+
+    # Creación de clave temporal: orden secuencial de aparición de IDs duplicados
+    df_acc['_ocurrencia'] = df_acc.groupby(id_izq).cumcount()
+
+    for idx, (df_sig, nom_sig) in enumerate(lista_dfs[1:], start=1):
+        id_der = (
+            columnas_id.get(nom_sig)
+            or next((c for c in df_sig.columns if "id" in str(c).lower()), df_sig.columns[0])
+        )
+        if id_der not in df_sig.columns:
+            id_der = df_sig.columns[0]
+
+        df_sig_renom = df_sig.copy()
+        renombrados = {}
+        for c in df_sig_renom.columns:
+            if c == '_ocurrencia':
+                continue
+            cand = c
+            if cand in cols_existentes:
+                contador = 2
+                cand = f"{c} ({contador})"
+                while cand in cols_existentes:
+                    contador += 1
+                    cand = f"{c} ({contador})"
+            renombrados[c] = cand
+            cols_existentes.add(cand)
+            origen_por_columna[cand] = nom_sig
+
+        df_sig_renom = df_sig_renom.rename(columns=renombrados)
+        id_der_renom = renombrados[id_der]
+
+        # Creación de clave temporal en el DataFrame secundario
+        df_sig_renom['_ocurrencia'] = df_sig_renom.groupby(id_der_renom).cumcount()
+
+        # Compatibilidad de tipos en clave de unión
+        if df_acc[id_izq].dtype != df_sig_renom[id_der_renom].dtype:
+            df_acc[id_izq] = df_acc[id_izq].astype(str)
+            df_sig_renom[id_der_renom] = df_sig_renom[id_der_renom].astype(str)
+
+        # Cruce seguro (Merge): clave compuesta [ID, '_ocurrencia'] con how='outer'
+        df_acc = pd.merge(
+            df_acc,
+            df_sig_renom,
+            left_on=[id_izq, '_ocurrencia'],
+            right_on=[id_der_renom, '_ocurrencia'],
+            how='outer'
+        )
+
+        # Rellenar en id_izq los IDs de aquellas filas que solo existían en el nuevo archivo
+        df_acc[id_izq] = df_acc[id_izq].combine_first(df_acc[id_der_renom])
+
+    # Limpieza de variables temporales
+    df_acc.drop(columns=['_ocurrencia'], inplace=True, errors='ignore')
+    df_acc.attrs['origen_por_columna'] = origen_por_columna
+    return df_acc, origen_por_columna
+
 
 def modulo_ingestion():
     st.markdown('<h1 style="font-size: 2.25rem;">Carga de datos</h1>', unsafe_allow_html=True)
@@ -76,7 +175,7 @@ def modulo_ingestion():
                 st.session_state.archivos_subidos_previos = nombres_actuales
 
             columnas_id_seleccionadas = {}
-            # Directiva 1: Selección de IDs en la Interfaz (Pre-Continuar)
+            # Selección de IDs en la Interfaz (Pre-Continuar)
             if len(archivos_activos) >= 2:
                 st.markdown("##### Selección de Claves de Unión (IDs)")
                 st.info("Seleccione la columna ID para cada archivo para alinear y consolidar los registros correspondientes:")
@@ -107,14 +206,21 @@ def modulo_ingestion():
                     )
                     columnas_id_seleccionadas[nombre_arch] = col_id_elegida
 
-            # Directiva 2: Consolidación por Alineación de IDs al presionar 'Continuar'
+            # Consolidación por Alineación de IDs con clave temporal secuencial al presionar 'Continuar'
             if st.button("Continuar", key="btn_continuar_csv", use_container_width=True):
                 try:
-                    lector = FactoryLectorDatos.obtener_lector_por_archivo(archivos_activos)
-                    df_crudo = lector.leer_archivos(
-                        origen=archivos_activos,
-                        columnas_id=columnas_id_seleccionadas if len(archivos_activos) >= 2 else None
-                    )
+                    if len(archivos_activos) >= 2:
+                        lista_dfs = []
+                        for arch in archivos_activos:
+                            lector_arch = FactoryLectorDatos.obtener_lector_por_archivo(arch)
+                            df_i = lector_arch._leer(arch) if hasattr(lector_arch, '_leer') else lector_arch.leer_archivos(arch)
+                            lista_dfs.append((df_i, getattr(arch, 'name', str(arch))))
+                        df_crudo, origen_map = consolidar_cruce_con_ocurrencia(lista_dfs, columnas_id_seleccionadas)
+                    else:
+                        lector = FactoryLectorDatos.obtener_lector_por_archivo(archivos_activos[0])
+                        df_crudo = lector.leer_archivos(archivos_activos[0])
+                        origen_map = {col: archivos_activos[0].name for col in df_crudo.columns}
+
                     df_saneado = EstandarizadorDatos.sanear_dataframe_individual(df_crudo)
                     df_consolidado = ValidadorEsquema.validar_estructura_tabular(df_saneado)
 
@@ -127,7 +233,6 @@ def modulo_ingestion():
                         st.session_state.archivos_dfs = {}
                     else:
                         columnas = list(df_consolidado.columns)
-                        origen_map = getattr(lector, 'origen_por_columna', {}) or df_consolidado.attrs.get('origen_por_columna', {})
                         if not origen_map:
                             origen_map = {col: (archivos_activos[0].name if archivos_activos else "Consolidado") for col in columnas}
 
@@ -171,20 +276,26 @@ def modulo_ingestion():
 
                     if archivos_restantes:
                         try:
-                            lector = FactoryLectorDatos.obtener_lector_por_archivo(archivos_restantes)
                             cols_id_rest = {
                                 getattr(a, 'name', str(a)): st.session_state.get(f"id_col_{getattr(a, 'name', str(a))}")
                                 for a in archivos_restantes
-                            } if len(archivos_restantes) >= 2 else None
+                            } if len(archivos_restantes) >= 2 else {}
 
-                            df_crudo_nuevo = lector.leer_archivos(
-                                origen=archivos_restantes,
-                                columnas_id=cols_id_rest
-                            )
+                            if len(archivos_restantes) >= 2:
+                                lista_dfs_rest = []
+                                for arch in archivos_restantes:
+                                    lector_arch = FactoryLectorDatos.obtener_lector_por_archivo(arch)
+                                    df_i = lector_arch._leer(arch) if hasattr(lector_arch, '_leer') else lector_arch.leer_archivos(arch)
+                                    lista_dfs_rest.append((df_i, getattr(arch, 'name', str(arch))))
+                                df_crudo_nuevo, origen_nuevo = consolidar_cruce_con_ocurrencia(lista_dfs_rest, cols_id_rest)
+                            else:
+                                lector = FactoryLectorDatos.obtener_lector_por_archivo(archivos_restantes[0])
+                                df_crudo_nuevo = lector.leer_archivos(archivos_restantes[0])
+                                origen_nuevo = {col: archivos_restantes[0].name for col in df_crudo_nuevo.columns}
+
                             df_saneado_nuevo = EstandarizadorDatos.sanear_dataframe_individual(df_crudo_nuevo)
                             df_nuevo = ValidadorEsquema.validar_estructura_tabular(df_saneado_nuevo)
                             cols_nuevas = list(df_nuevo.columns)
-                            origen_nuevo = getattr(lector, 'origen_por_columna', {}) or df_nuevo.attrs.get('origen_por_columna', {})
 
                             st.session_state.df_crudo_completo = df_nuevo
                             st.session_state.columnas_disponibles = cols_nuevas

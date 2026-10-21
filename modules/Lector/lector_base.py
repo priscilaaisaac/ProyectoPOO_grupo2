@@ -55,10 +55,12 @@ def consolidar_dataframes_multiples(
     Consolida una lista de tuplas (df, nombre_archivo).
     
     Si se proporciona `columnas_id` (o si modo_unificacion es por id),
-    alinea y consolida horizontalmente los registros haciendo coincidir los IDs seleccionados
-    mediante pd.merge con how='outer'. Si un ID existe en múltiples archivos pero en posiciones
-    diferentes (desfasadas), se alinean primero por el ID. Los IDs no coincidentes se concatenan
-    verticalmente rellenando las columnas con valores nulos (NaN).
+    alinea y une los registros mediante una clave compuesta [ID, '_ocurrencia']
+    usando pd.merge con how='outer'.
+    '_ocurrencia' representa el orden de aparición de los IDs duplicados dentro de cada archivo
+    (df.groupby(columna_id).cumcount()), previniendo el producto cartesiano sin perder datos válidos.
+    Al finalizar, '_ocurrencia' se elimina con drop(columns=['_ocurrencia'], inplace=True, errors='ignore').
+    Los IDs no coincidentes se concatenan verticalmente rellenando las columnas con NaN.
     Las columnas repetidas reciben sufijos numéricos ' (2)', ' (3)', etc. para no perder datos.
     
     Si no se especifica `columnas_id`, mantiene el comportamiento tradicional (pd.concat).
@@ -73,7 +75,7 @@ def consolidar_dataframes_multiples(
         df_res.attrs['origen_por_columna'] = origen_map
         return df_res, origen_map
 
-    # Caso con alineación por ID:
+    # Caso con alineación por ID y clave temporal secuencial '_ocurrencia':
     if columnas_id is not None:
         cols_existentes = set()
         origen_por_columna: Dict[str, str] = {}
@@ -82,32 +84,37 @@ def consolidar_dataframes_multiples(
         df_acc = df_base.copy()
 
         # Determinar clave ID para el primer archivo:
-        id_col_base = (
+        id_izq = (
             columnas_id.get(nom_base)
             or columnas_id.get(0)
             or columnas_id.get("0")
             or next((c for c in df_acc.columns if "id" in str(c).lower()), df_acc.columns[0])
         )
-        if id_col_base not in df_acc.columns:
-            id_col_base = df_acc.columns[0]
+        if id_izq not in df_acc.columns:
+            id_izq = df_acc.columns[0]
 
         for c in df_acc.columns:
             cols_existentes.add(c)
             origen_por_columna[c] = nom_base
 
+        # Creación de clave temporal: orden de aparición de IDs duplicados
+        df_acc['_ocurrencia'] = df_acc.groupby(id_izq).cumcount()
+
         for idx, (df_sig, nom_sig) in enumerate(lista_dfs[1:], start=1):
-            id_col_sig = (
+            id_der = (
                 columnas_id.get(nom_sig)
                 or columnas_id.get(idx)
                 or columnas_id.get(str(idx))
                 or next((c for c in df_sig.columns if "id" in str(c).lower()), df_sig.columns[0])
             )
-            if id_col_sig not in df_sig.columns:
-                id_col_sig = df_sig.columns[0]
+            if id_der not in df_sig.columns:
+                id_der = df_sig.columns[0]
 
             df_sig_renom = df_sig.copy()
             renombrados = {}
             for c in df_sig_renom.columns:
+                if c == '_ocurrencia':
+                    continue
                 cand = c
                 if cand in cols_existentes:
                     contador = 2
@@ -120,23 +127,30 @@ def consolidar_dataframes_multiples(
                 origen_por_columna[cand] = nom_sig
 
             df_sig_renom = df_sig_renom.rename(columns=renombrados)
-            id_col_sig_renom = renombrados[id_col_sig]
+            id_der_renom = renombrados[id_der]
 
-            # Crear clave de unión estandarizada como string limpio (preservando None para no colisionar NaNs)
-            df_acc['__merge_key__'] = df_acc[id_col_base].apply(
-                lambda v: str(v).strip() if pd.notna(v) and str(v).strip() != "" and str(v).strip().lower() != "nan" else None
+            # Creación de clave temporal en el DataFrame secundario
+            df_sig_renom['_ocurrencia'] = df_sig_renom.groupby(id_der_renom).cumcount()
+
+            # Asegurar tipos compatibles para las columnas clave de unión
+            if df_acc[id_izq].dtype != df_sig_renom[id_der_renom].dtype:
+                df_acc[id_izq] = df_acc[id_izq].astype(str)
+                df_sig_renom[id_der_renom] = df_sig_renom[id_der_renom].astype(str)
+
+            # Cruce seguro (Merge): clave compuesta [ID, '_ocurrencia'] con how='outer'
+            df_acc = pd.merge(
+                df_acc,
+                df_sig_renom,
+                left_on=[id_izq, '_ocurrencia'],
+                right_on=[id_der_renom, '_ocurrencia'],
+                how='outer'
             )
-            df_sig_renom['__merge_key__'] = df_sig_renom[id_col_sig_renom].apply(
-                lambda v: str(v).strip() if pd.notna(v) and str(v).strip() != "" and str(v).strip().lower() != "nan" else None
-            )
 
-            # pd.merge con how='outer' para alinear filas desfasadas y agregar filas únicas verticalmente
-            df_acc = pd.merge(df_acc, df_sig_renom, on='__merge_key__', how='outer')
+            # Rellenar en id_izq los IDs de aquellas filas que solo existían en el nuevo archivo
+            df_acc[id_izq] = df_acc[id_izq].combine_first(df_acc[id_der_renom])
 
-            # Rellenar en id_col_base los IDs de aquellas filas que solo existían en el nuevo archivo
-            df_acc[id_col_base] = df_acc[id_col_base].combine_first(df_acc[id_col_sig_renom])
-            df_acc.drop(columns=['__merge_key__'], inplace=True)
-
+        # Limpieza de variables temporales
+        df_acc.drop(columns=['_ocurrencia'], inplace=True, errors='ignore')
         df_acc.attrs['origen_por_columna'] = origen_por_columna
         return df_acc, origen_por_columna
 
