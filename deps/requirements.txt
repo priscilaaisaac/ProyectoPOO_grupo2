@@ -6,3 +6,5 @@ openpyxl
 reportlab
 pandera
 python-docx
+pytest
+pytest-cov

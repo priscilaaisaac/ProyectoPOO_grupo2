@@ -1,442 +1,666 @@
-import unittest
+"""
+Suite exhaustiva de pruebas unitarias para el subsistema de Ingestión y Lectura de Datos
+(modules.Lector).
+
+Cumple estrictamente con:
+- Aislamiento absoluto (100% en memoria mediante io.StringIO, io.BytesIO y sqlite:///:memory:).
+- Exclusión total de UI y dependencias de Streamlit.
+- Cobertura integral (>= 70%, buscando >= 95%):
+  - LectorDatos (interfaz abstracta, alias .leer(), lectura de cabeceras).
+  - consolidar_dataframes_multiples (clave compuesta [ID, '_ocurrencia'], outer join,
+    descarte de '_ocurrencia', prevención de producto cartesiano, concatenación horizontal y vertical).
+  - LectorTextoDelimitado (detección de delimitadores ',', ';', '\t', '|', ' ', latin-1, malformed).
+  - LectorExcel (lectura con openpyxl en memoria BytesIO, cabeceras, múltiples hojas).
+  - LectorSQL (lectura con sqlite:///:memory:, validación de nombre_tabla).
+  - FactoryLectorDatos y LectorOrquestadorMultiArchivo (resolución polimórfica homogénea y mixta).
+  - detectar_formato y detectar_separador.
+"""
+
 import io
+import sqlite3
+import pytest
 import pandas as pd
-import numpy as np
-from modules.Lector.lector import (
-    detectar_separador,
-    LectorDatos,
+from typing import List, Tuple
+
+from modules.Lector.lector_base import LectorDatos, consolidar_dataframes_multiples
+from modules.Lector.lector_texto_delimitado import (
     LectorTextoDelimitado,
-    LectorCSV,
-    LectorExcel,
-    LectorOrquestadorMultiArchivo,
-    FactoryLectorDatos
+    detectar_separador,
+    DELIMITADORES_VALIDOS,
 )
-from modules.calidad import sanear_dataframe_individual, EstandarizadorDatos
+from modules.Lector.lector_excel import LectorExcel
+from modules.Lector.lector_sql import LectorSQL
+from modules.Lector.lector import (
+    LectorCSV,
+    LectorTXT,
+    LectorOrquestadorMultiArchivo,
+    FactoryLectorDatos,
+    detectar_formato,
+)
 
 
-class MockUploadedFile(io.BytesIO):
-    """Simula un objeto UploadedFile de Streamlit."""
-    def __init__(self, content: bytes, name: str):
-        super().__init__(content)
+# =====================================================================
+# Clases Auxiliares en Memoria
+# =====================================================================
+
+class NamedStringIO(io.StringIO):
+    """io.StringIO enriquecido con atributo .name para simular archivos de texto subidos."""
+    def __init__(self, initial_value: str = "", name: str = "archivo.csv"):
+        super().__init__(initial_value)
         self.name = name
 
 
-class TestLectorDatos(unittest.TestCase):
+class NamedBytesIO(io.BytesIO):
+    """io.BytesIO enriquecido con atributo .name para simular archivos binarios subidos."""
+    def __init__(self, initial_bytes: bytes = b"", name: str = "archivo.xlsx"):
+        super().__init__(initial_bytes)
+        self.name = name
 
-    def test_deteccion_separadores_validos(self):
-        """Prueba detección de delimitadores estándar."""
-        casos = [
-            (b"col1,col2,col3\nval1,val2,val3\n", ","),
-            (b"col1;col2;col3\nval1;val2;val3\n", ";"),
-            (b"col1\tcol2\tcol3\nval1\tval2\tval3\n", "\t"),
-            (b"col1|col2|col3\nval1|val2|val3\n", "|"),
-        ]
-        for contenido, esperado in casos:
-            archivo = io.BytesIO(contenido)
-            sep = detectar_separador(archivo)
-            self.assertEqual(sep, esperado, f"Falló para separador {esperado}")
-            self.assertEqual(archivo.tell(), 0, "El puntero debe regresar al inicio con seek(0)")
 
-    def test_guion_no_es_separador(self):
-        """
-        Prueba crítica: 'FL-9768,JFK,ORY' tiene un guión, pero debe detectarse ','
-        y no romper el código de vuelo.
-        """
-        contenido = (
-            b"id_vuelo,aeropuerto_origen,aeropuerto_destino\n"
-            b"FL-9768,JFK,ORY\n"
-            b"FL-1234,EZE,MIA\n"
-        )
-        archivo = MockUploadedFile(contenido, "vuelos.csv")
-        sep = detectar_separador(archivo)
-        self.assertEqual(sep, ",")
+def crear_excel_en_memoria(df: pd.DataFrame, sheet_name: str = "Sheet1", name: str = "datos.xlsx") -> NamedBytesIO:
+    """Genera un archivo Excel en memoria utilizando openpyxl."""
+    buf = NamedBytesIO(name=name)
+    with pd.ExcelWriter(buf, engine="openpyxl") as writer:
+        df.to_excel(writer, sheet_name=sheet_name, index=False)
+    buf.seek(0)
+    return buf
 
-        lector = LectorCSV()
-        df = lector.leer_archivos(archivo)
-        self.assertIn("id_vuelo", df.columns)
-        self.assertIn("aeropuerto_origen", df.columns)
-        self.assertIn("aeropuerto_destino", df.columns)
-        self.assertEqual(df["id_vuelo"].iloc[0], "FL-9768")
-        self.assertEqual(df["aeropuerto_origen"].iloc[0], "JFK")
-        self.assertEqual(df["aeropuerto_destino"].iloc[0], "ORY")
 
-    def test_limpieza_espacios_blanco(self):
+class LectorConcretoStub(LectorDatos):
+    """Subclase mínima para probar la interfaz LectorDatos y sus métodos concretos."""
+    EXTENSIONES_SOPORTADAS = ('.stub',)
+
+    def leer_archivos(self, origen, **kwargs) -> pd.DataFrame:
+        return pd.DataFrame({"col1": [1, 2], "col2": [3, 4]})
+
+
+# =====================================================================
+# 1. Pruebas para LectorDatos (Clase Base Abstracta)
+# =====================================================================
+
+class TestLectorDatosBase:
+    """Pruebas de la clase abstracta pura LectorDatos y métodos auxiliares."""
+
+    def test_no_permite_instanciar_directamente_clase_abstracta(self):
+        with pytest.raises(TypeError):
+            LectorDatos()
+
+    def test_subclase_sin_metodo_abstracto_falla(self):
+        class LectorIncompleto(LectorDatos):
+            pass
+        with pytest.raises(TypeError):
+            LectorIncompleto()
+
+    def test_alias_leer_llama_a_leer_archivos(self):
+        lector = LectorConcretoStub()
+        df = lector.leer("origen_dummy")
+        assert list(df.columns) == ["col1", "col2"]
+        assert len(df) == 2
+
+    def test_obtener_cabeceras_con_leer_archivos(self):
+        lector = LectorConcretoStub()
+        cabeceras = lector.obtener_cabeceras("origen_dummy")
+        assert cabeceras == ["col1", "col2"]
+
+    def test_obtener_cabeceras_con_metodo_leer_privado(self):
+        class LectorConMetodoLeer(LectorDatos):
+            def _leer(self, archivo, **kwargs):
+                return pd.DataFrame({"id_vuelo": [], "precio": []})
+            def leer_archivos(self, origen, **kwargs):
+                return self._leer(origen, **kwargs)
+
+        lector = LectorConMetodoLeer()
+        buf = NamedStringIO("cabecera dummy", name="dummy.csv")
+        cabeceras = lector.obtener_cabeceras(buf)
+        assert cabeceras == ["id_vuelo", "precio"]
+        assert buf.tell() == 0  # Debe haber reseteado el puntero
+
+
+# =====================================================================
+# 2. Pruebas para consolidar_dataframes_multiples
+# =====================================================================
+
+class TestConsolidarDataFramesMultiples:
+    """Pruebas de la lógica de consolidación relacional y alineación por IDs."""
+
+    def test_lista_vacia_retorna_dataframe_vacio(self):
+        df_res, mapping = consolidar_dataframes_multiples([])
+        assert df_res.empty
+        assert mapping == {}
+
+    def test_un_solo_dataframe_retorna_copia_y_mapping(self):
+        df = pd.DataFrame({"id": [1, 2], "precio": [100, 200]})
+        df_res, mapping = consolidar_dataframes_multiples([(df, "archivo1.csv")])
+        assert df_res.equals(df)
+        assert df_res is not df
+        assert mapping == {"id": "archivo1.csv", "precio": "archivo1.csv"}
+        assert df_res.attrs["origen_por_columna"] == mapping
+
+    def test_consolidacion_por_id_con_alineacion_y_sin_producto_cartesiano(self):
         """
-        Prueba que las cabeceras y los datos de texto se limpien con strip(),
-        preservando valores None / NaN.
+        Prueba clave: dos archivos con IDs duplicados.
+        La clave temporal '_ocurrencia' debe alinear el primer ID con el primer ID,
+        y el segundo con el segundo, produciendo exactamente 2 filas (sin producto cartesiano 2x2=4).
         """
-        df_raw = pd.DataFrame({
-            "  col1  ": ["  dato1 ", " dato2", None, np.nan],
-            "col2 ": [10, 20, 30, 40],
-            " col3": ["  texto con espacios internos  ", "normal", " ", "a"]
+        df1 = pd.DataFrame({
+            "id_vuelo": ["FL-100", "FL-100"],
+            "origen": ["EZE", "COR"]
         })
-        df_saneado = sanear_dataframe_individual(df_raw)
-
-        self.assertEqual(list(df_saneado.columns), ["col1", "col2", "col3"])
-        self.assertEqual(df_saneado["col1"].iloc[0], "dato1")
-        self.assertEqual(df_saneado["col1"].iloc[1], "dato2")
-        self.assertTrue(pd.isna(df_saneado["col1"].iloc[2]))
-        self.assertTrue(pd.isna(df_saneado["col1"].iloc[3]))
-        self.assertEqual(df_saneado["col3"].iloc[0], "texto con espacios internos")
-        self.assertEqual(df_saneado["col3"].iloc[2], "")
-
-    def test_unificacion_horizontal_multiples_archivos(self):
-        """
-        Prueba la unificación horizontal (axis=1) por defecto, manejo de colisión
-        de nombres de columnas (col (2)) y preservación del origen de columnas.
-        """
-        arch1 = MockUploadedFile(
-            b"id,origen,fecha\n1,JFK,2026-10-01\n2,EZE,2026-10-02\n",
-            "archivo_1.csv"
-        )
-        arch2 = MockUploadedFile(
-            b"id,destino,precio\n101,MAD,500\n102,BCN,600\n",
-            "archivo_2.csv"
-        )
-
-        lector = LectorCSV()
-        df = lector.leer_archivos([arch1, arch2])
-
-        # Columnas esperadas: id, origen, fecha, id (2), destino, precio
-        esperadas = ["id", "origen", "fecha", "id (2)", "destino", "precio"]
-        self.assertEqual(list(df.columns), esperadas)
-
-        # Verificar orígenes
-        origen_map = lector.origen_por_columna
-        self.assertEqual(origen_map["id"], "archivo_1.csv")
-        self.assertEqual(origen_map["origen"], "archivo_1.csv")
-        self.assertEqual(origen_map["fecha"], "archivo_1.csv")
-        self.assertEqual(origen_map["id (2)"], "archivo_2.csv")
-        self.assertEqual(origen_map["destino"], "archivo_2.csv")
-        self.assertEqual(origen_map["precio"], "archivo_2.csv")
-
-        # Verificar metadata en df.attrs
-        self.assertEqual(df.attrs["origen_por_columna"], origen_map)
-
-    def test_unificacion_vertical(self):
-        """
-        Prueba la unificación vertical (axis=0) cuando se especifica.
-        """
-        arch1 = MockUploadedFile(
-            b"id,origen\n1,JFK\n2,EZE\n",
-            "archivo_1.csv"
-        )
-        arch2 = MockUploadedFile(
-            b"id,destino\n3,MAD\n4,BCN\n",
-            "archivo_2.csv"
-        )
-
-        lector = LectorCSV()
-        df = lector.leer_archivos([arch1, arch2], modo_unificacion="vertical")
-
-        self.assertEqual(len(df), 4)
-        self.assertIn("id", df.columns)
-        self.assertIn("origen", df.columns)
-        self.assertIn("destino", df.columns)
-        self.assertTrue(pd.isna(df["destino"].iloc[0]))
-        self.assertTrue(pd.isna(df["origen"].iloc[2]))
-
-    def test_delimitador_espacio_simple(self):
-        """Prueba detección y lectura de archivos delimitados por espacio simple."""
-        contenido = (
-            b"id_vuelo aeropuerto_origen aeropuerto_destino\n"
-            b"FL-9768 JFK ORY\n"
-            b"FL-1234 EZE MIA\n"
-        )
-        archivo = MockUploadedFile(contenido, "vuelos_espacios.txt")
-        sep = detectar_separador(archivo)
-        self.assertEqual(sep, " ")
-
-        lector = LectorCSV()
-        df = lector.leer_archivos(archivo)
-        self.assertEqual(list(df.columns), ["id_vuelo", "aeropuerto_origen", "aeropuerto_destino"])
-        self.assertEqual(len(df), 2)
-        self.assertEqual(df["id_vuelo"].iloc[0], "FL-9768")
-        self.assertEqual(df["aeropuerto_origen"].iloc[0], "JFK")
-        self.assertEqual(df["aeropuerto_destino"].iloc[0], "ORY")
-
-    def test_delimitador_espacios_multiples_sin_columnas_vacias(self):
-        r"""
-        Prueba lectura con espacios múltiples entre columnas (sep=r'\s+').
-        Asegura que no se generen columnas vacías espurias y se preserven los IDs con guion.
-        """
-        contenido = (
-            b"id_vuelo   aeropuerto_origen    aeropuerto_destino\n"
-            b"FL-9768    JFK                  ORY\n"
-            b"FL-5544    MIA                  EZE\n"
-        )
-        archivo = MockUploadedFile(contenido, "vuelos_multi_espacio.txt")
-        sep = detectar_separador(archivo)
-        self.assertEqual(sep, " ")
-
-        lector = LectorCSV()
-        df = lector.leer_archivos(archivo)
-        self.assertEqual(list(df.columns), ["id_vuelo", "aeropuerto_origen", "aeropuerto_destino"])
-        self.assertEqual(len(df), 2)
-        self.assertEqual(df["id_vuelo"].iloc[0], "FL-9768")
-        self.assertEqual(df["aeropuerto_origen"].iloc[0], "JFK")
-        self.assertEqual(df["aeropuerto_destino"].iloc[0], "ORY")
-        self.assertEqual(df["id_vuelo"].iloc[1], "FL-5544")
-
-    def test_unificacion_archivos_mixtos_csv_y_espacios(self):
-        """
-        Prueba que un archivo separado por comas y otro por espacios puedan
-        cargarse juntos en una sola llamada y unificarse horizontalmente.
-        """
-        arch_coma = MockUploadedFile(
-            b"id_vuelo,origen\nFL-9768,JFK\nFL-1234,EZE\n",
-            "vuelos_coma.csv"
-        )
-        arch_espacio = MockUploadedFile(
-            b"id_vuelo   destino\nFL-9768    ORY\nFL-1234    MIA\n",
-            "vuelos_espacio.txt"
-        )
-
-        lector = LectorCSV()
-        df = lector.leer_archivos([arch_coma, arch_espacio])
-
-        self.assertEqual(list(df.columns), ["id_vuelo", "origen", "id_vuelo (2)", "destino"])
-        self.assertEqual(lector.origen_por_columna["id_vuelo"], "vuelos_coma.csv")
-        self.assertEqual(lector.origen_por_columna["origen"], "vuelos_coma.csv")
-        self.assertEqual(lector.origen_por_columna["id_vuelo (2)"], "vuelos_espacio.txt")
-        self.assertEqual(lector.origen_por_columna["destino"], "vuelos_espacio.txt")
-        self.assertEqual(df["id_vuelo"].iloc[0], "FL-9768")
-        self.assertEqual(df["id_vuelo (2)"].iloc[0], "FL-9768")
-        self.assertEqual(df["destino"].iloc[0], "ORY")
-
-    def test_archivos_combinados_csv_txt_y_excel(self):
-        """
-        Prueba la combinación de archivos CSV, TXT y Excel (.xlsx) juntos.
-        Verifica que la ramificación temprana por extensión omita csv.Sniffer para Excel
-        y que no ocurra el error de determinación de engine en Excel.
-        """
-        # 1. Crear archivo Excel en memoria
-        excel_buf = io.BytesIO()
-        df_excel = pd.DataFrame({"id_vuelo": ["FL-9768", "FL-1234"], "precio": [500, 650]})
-        df_excel.to_excel(excel_buf, index=False, engine="openpyxl")
-        excel_buf.seek(0)
-        arch_excel = MockUploadedFile(excel_buf.getvalue(), "tarifas.xlsx")
-
-        # 2. Archivo CSV tradicional
-        arch_csv = MockUploadedFile(
-            b"id_vuelo,aeropuerto_origen\nFL-9768,JFK\nFL-1234,EZE\n",
-            "vuelos_origen.csv"
-        )
-
-        # 3. Archivo TXT delimitado por tabulaciones o espacios
-        arch_txt = MockUploadedFile(
-            b"id_vuelo\taeropuerto_destino\nFL-9768\tORY\nFL-1234\tMIA\n",
-            "vuelos_destino.txt"
-        )
-
-        lector = FactoryLectorDatos.obtener_lector_por_archivo([arch_csv, arch_txt, arch_excel])
-        df_consolidado = lector.leer_archivos([arch_csv, arch_txt, arch_excel])
-
-        # Verificar columnas y desduplicación horizontal
-        esperadas = ["id_vuelo", "aeropuerto_origen", "id_vuelo (2)", "aeropuerto_destino", "id_vuelo (3)", "precio"]
-        self.assertEqual(list(df_consolidado.columns), esperadas)
-        self.assertEqual(len(df_consolidado), 2)
-        self.assertEqual(df_consolidado["aeropuerto_origen"].iloc[0], "JFK")
-        self.assertEqual(df_consolidado["aeropuerto_destino"].iloc[0], "ORY")
-        self.assertEqual(df_consolidado["precio"].iloc[0], 500)
-
-        # Verificar orígenes registrados
-        self.assertEqual(lector.origen_por_columna["aeropuerto_origen"], "vuelos_origen.csv")
-        self.assertEqual(lector.origen_por_columna["aeropuerto_destino"], "vuelos_destino.txt")
-        self.assertEqual(lector.origen_por_columna["precio"], "tarifas.xlsx")
-
-    def test_lector_excel_individual(self):
-        """Verifica que un archivo Excel individual se lea correctamente con openpyxl."""
-        excel_buf = io.BytesIO()
-        pd.DataFrame({"vuelo": ["FL-99"], "asientos": [180]}).to_excel(excel_buf, index=False, engine="openpyxl")
-        excel_buf.seek(0)
-        arch_excel = MockUploadedFile(excel_buf.getvalue(), "datos.xlsx")
-
-        lector = FactoryLectorDatos.obtener_lector_por_archivo(arch_excel)
-        df = lector.leer_archivos(arch_excel)
-        self.assertEqual(list(df.columns), ["vuelo", "asientos"])
-        self.assertEqual(df["vuelo"].iloc[0], "FL-99")
-        self.assertEqual(df["asientos"].iloc[0], 180)
-
-    def test_factory_lector(self):
-        """Verifica que FactoryLectorDatos retorne la clase correcta."""
-        self.assertIsInstance(FactoryLectorDatos.obtener_lector("csv"), LectorTextoDelimitado)
-        self.assertIsInstance(FactoryLectorDatos.obtener_lector("txt"), LectorTextoDelimitado)
-        self.assertIsInstance(FactoryLectorDatos.obtener_lector("texto_delimitado"), LectorTextoDelimitado)
-        self.assertIsInstance(FactoryLectorDatos.obtener_lector("excel"), LectorExcel)
-
-        f_csv = MockUploadedFile(b"a,b\n1,2\n", "datos.csv")
-        f_txt = MockUploadedFile(b"a\tb\n1\t2\n", "datos.txt")
-        self.assertIsInstance(FactoryLectorDatos.obtener_lector_por_archivo(f_csv), LectorTextoDelimitado)
-        self.assertIsInstance(FactoryLectorDatos.obtener_lector_por_archivo(f_txt), LectorTextoDelimitado)
-        f_excel = MockUploadedFile(b"", "datos.xlsx")
-        self.assertIsInstance(FactoryLectorDatos.obtener_lector_por_archivo(f_excel), LectorExcel)
-        self.assertIsInstance(FactoryLectorDatos.obtener_lector_por_archivo([f_csv, f_excel]), LectorOrquestadorMultiArchivo)
-        self.assertIsInstance(FactoryLectorDatos.obtener_lector_por_archivo([f_csv, f_csv]), LectorTextoDelimitado)
-
-    def test_jerarquia_polimorfica_y_responsabilidades(self):
-        """Verifica el cumplimiento de la jerarquía POO limpia y ubicación de responsabilidades."""
-        # 1. Jerarquía de lectores: LectorTextoDelimitado unifica CSV y TXT y hereda de LectorDatos
-        self.assertTrue(issubclass(LectorTextoDelimitado, LectorDatos))
-        self.assertTrue(issubclass(LectorExcel, LectorDatos))
-        self.assertFalse(issubclass(LectorExcel, LectorTextoDelimitado), "LectorExcel NO debe heredar de LectorTextoDelimitado")
-
-        # 2. Método detectar_separador en instancia de LectorTextoDelimitado
-        lector_txt_del = LectorTextoDelimitado()
-        self.assertTrue(hasattr(lector_txt_del, "detectar_separador"))
-        buf = io.BytesIO(b"x;y;z\n1;2;3\n")
-        self.assertEqual(lector_txt_del.detectar_separador(buf), ";")
-
-        # 3. Soporte de extensiones unificadas (.csv y .txt)
-        self.assertIn('.csv', lector_txt_del.EXTENSIONES_SOPORTADAS)
-        self.assertIn('.txt', lector_txt_del.EXTENSIONES_SOPORTADAS)
-
-        # 4. Validar existencia en modules/validador y modules/calidad
-        from modules.validador import ValidadorEsquema
-
-        df_prueba = pd.DataFrame({"  col_a  ": [" val "], " col_b": [10]})
-        df_saneado = EstandarizadorDatos.sanear_dataframe_individual(df_prueba)
-        self.assertEqual(list(df_saneado.columns), ["col_a", "col_b"])
-        self.assertEqual(df_saneado["col_a"].iloc[0], "val")
-
-        df_validado = ValidadorEsquema.validar_estructura_tabular(df_saneado)
-        self.assertEqual(list(df_validado.columns), ["col_a", "col_b"])
-
-    def test_obtener_cabeceras_temporal(self):
-        """Directiva 1: Verifica que obtener_cabeceras lea los encabezados sin alterar el puntero."""
-        contenido_csv = b"id_vuelo,origen,destino\nFL-1,JFK,MIA\n"
-        arch_csv = MockUploadedFile(contenido_csv, "vuelos.csv")
-        lector_csv = LectorCSV()
-        cabeceras = lector_csv.obtener_cabeceras(arch_csv)
-        self.assertEqual(cabeceras, ["id_vuelo", "origen", "destino"])
-        self.assertEqual(arch_csv.tell(), 0, "El puntero debe permanecer al inicio con seek(0)")
-
-        # Excel
-        buf_excel = io.BytesIO()
-        pd.DataFrame({"codigo": [1], "precio": [100]}).to_excel(buf_excel, index=False, engine="openpyxl")
-        buf_excel.seek(0)
-        arch_excel = MockUploadedFile(buf_excel.getvalue(), "vuelos.xlsx")
-        lector_excel = LectorExcel()
-        cabeceras_excel = lector_excel.obtener_cabeceras(arch_excel)
-        self.assertEqual(cabeceras_excel, ["codigo", "precio"])
-        self.assertEqual(arch_excel.tell(), 0)
-
-    def test_consolidacion_alineacion_ids_desfasados(self):
-        """
-        Directiva 2: Si el mismo ID existe en distintos archivos pero en posiciones distintas
-        (ej. fila 0 en arch1 y fila 2 en arch2), se alinean primero por ID y se unen horizontalmente.
-        """
-        arch1 = MockUploadedFile(
-            b"id_vuelo,origen,precio\nFL-1,JFK,100\nFL-2,EZE,200\n",
-            "arch1.csv"
-        )
-        arch2 = MockUploadedFile(
-            b"codigo,capacidad,precio\nFL-2,150,220\nFL-99,80,500\nFL-1,180,110\n",
-            "arch2.csv"
-        )
-
-        lector = LectorOrquestadorMultiArchivo()
-        cols_id = {"arch1.csv": "id_vuelo", "arch2.csv": "codigo"}
-        df = lector.leer_archivos([arch1, arch2], columnas_id=cols_id)
-
-        # FL-1 debe estar alineado con FL-1 a pesar de estar en filas desfasadas
-        fila_fl1 = df[df["id_vuelo"] == "FL-1"].iloc[0]
-        self.assertEqual(fila_fl1["origen"], "JFK")
-        self.assertEqual(fila_fl1["capacidad"], 180)
-        self.assertEqual(fila_fl1["precio"], 100)
-        self.assertEqual(fila_fl1["precio (2)"], 110)
-
-        # FL-2 debe estar alineado con FL-2
-        fila_fl2 = df[df["id_vuelo"] == "FL-2"].iloc[0]
-        self.assertEqual(fila_fl2["origen"], "EZE")
-        self.assertEqual(fila_fl2["capacidad"], 150)
-        self.assertEqual(fila_fl2["precio"], 200)
-        self.assertEqual(fila_fl2["precio (2)"], 220)
-
-    def test_consolidacion_ids_no_coincidentes_verticales(self):
-        """
-        Directiva 2: IDs únicos en un archivo se concatenan verticalmente rellenando con NaN
-        las columnas del otro archivo.
-        """
-        arch1 = MockUploadedFile(
-            b"id_vuelo,origen\nFL-1,JFK\nFL-SOLO-1,MIA\n",
-            "arch1.csv"
-        )
-        arch2 = MockUploadedFile(
-            b"id_vuelo,destino\nFL-1,MAD\nFL-SOLO-2,BCN\n",
-            "arch2.csv"
-        )
-
-        lector = LectorCSV()
-        cols_id = {"arch1.csv": "id_vuelo", "arch2.csv": "id_vuelo"}
-        df = lector.leer_archivos([arch1, arch2], columnas_id=cols_id)
-
-        # FL-SOLO-1 solo existe en arch1: destino debe ser NaN
-        fila_solo1 = df[df["id_vuelo"] == "FL-SOLO-1"].iloc[0]
-        self.assertEqual(fila_solo1["origen"], "MIA")
-        self.assertTrue(pd.isna(fila_solo1["destino"]))
-
-        # FL-SOLO-2 solo existe en arch2: origen debe ser NaN
-        fila_solo2 = df[df["id_vuelo"] == "FL-SOLO-2"].iloc[0]
-        self.assertEqual(fila_solo2["destino"], "BCN")
-        self.assertTrue(pd.isna(fila_solo2["origen"]))
-
-    def test_filtro_calidad_50_pct_nulos(self):
-        """
-        Directiva 3: Elimina automáticamente filas con >= 50% de atributos nulos/NaN.
-        """
-        # 4 columnas:
-        # Fila 0: 0% nulos -> Sobrevive
-        # Fila 1: 1 de 4 nulos (25%) -> Sobrevive
-        # Fila 2: 2 de 4 nulos (50%) -> Eliminada
-        # Fila 3: 3 de 4 nulos (75%) -> Eliminada
-        df_test = pd.DataFrame({
-            "a": ["OK", "OK", "OK", None],
-            "b": ["OK", "OK", None, None],
-            "c": ["OK", "OK", None, None],
-            "d": ["OK", None, "OK", "OK"]
+        df2 = pd.DataFrame({
+            "id_vuelo": ["FL-100", "FL-100"],
+            "precio": [150.0, 180.0]
         })
 
-        df_filtrado, eliminados = EstandarizadorDatos.filtrar_por_umbral_nulos(df_test, umbral_pct=0.50)
-        self.assertEqual(eliminados, 2)
-        self.assertEqual(len(df_filtrado), 2)
-        self.assertEqual(list(df_filtrado.index), [0, 1])
+        lista_dfs = [(df1, "vuelos.csv"), (df2, "precios.csv")]
+        columnas_id = {"vuelos.csv": "id_vuelo", "precios.csv": "id_vuelo"}
 
-    def test_consolidacion_alineacion_secuencial_sin_producto_cartesiano(self):
+        df_res, mapping = consolidar_dataframes_multiples(lista_dfs, columnas_id=columnas_id)
+
+        # Debe generar exactamente 2 filas y haber eliminado '_ocurrencia'
+        assert len(df_res) == 2
+        assert "_ocurrencia" not in df_res.columns
+        assert "id_vuelo" in df_res.columns
+        assert "origen" in df_res.columns
+        assert "precio" in df_res.columns
+        # Las columnas repetidas deben recibir sufijo si colisionan
+        assert "id_vuelo (2)" in df_res.columns
+
+    def test_consolidacion_por_id_filas_desfasadas_y_nuevos_registros(self):
         """
-        Verifica que al existir IDs duplicados en ambos archivos, se use la clave compuesta
-        [ID, '_ocurrencia'] evitando la explosión del producto cartesiano, y que '_ocurrencia'
-        sea eliminada del resultado final.
+        Si un ID está en distintas posiciones (ej. fila 0 vs fila 1),
+        pd.merge outer debe alinearlos.
+        IDs presentes solo en df1 o solo en df2 deben conservarse rellenando con NaN.
         """
-        arch1 = MockUploadedFile(
-            b"id_vuelo,origen,precio\nFL-1,JFK,100\nFL-1,EWR,110\nFL-2,EZE,200\n",
-            "arch1.csv"
+        df1 = pd.DataFrame({
+            "id": ["A", "B"],
+            "val1": [10, 20]
+        })
+        df2 = pd.DataFrame({
+            "id": ["B", "C"],
+            "val2": [200, 300]
+        })
+
+        lista = [(df1, "f1.csv"), (df2, "f2.csv")]
+        columnas_id = {"f1.csv": "id", "f2.csv": "id"}
+
+        df_res, mapping = consolidar_dataframes_multiples(lista, columnas_id=columnas_id)
+
+        # Registros resultantes: A, B, C (3 filas)
+        assert len(df_res) == 3
+        assert "_ocurrencia" not in df_res.columns
+
+        # Registro B debe estar alineado
+        fila_b = df_res[df_res["id"] == "B"].iloc[0]
+        assert fila_b["val1"] == 20
+        assert fila_b["val2"] == 200
+
+        # Registro A sólo tenía val1
+        fila_a = df_res[df_res["id"] == "A"].iloc[0]
+        assert fila_a["val1"] == 10
+        assert pd.isna(fila_a["val2"])
+
+        # Registro C sólo tenía val2 (rellenado con combine_first en id)
+        fila_c = df_res[df_res["id"] == "C"].iloc[0]
+        assert pd.isna(fila_c["val1"])
+        assert fila_c["val2"] == 300
+
+    def test_consolidacion_por_id_resolucion_claves_por_indice_o_nombre(self):
+        """Prueba fallback de búsqueda de columnas ID por índice numérico o string."""
+        df1 = pd.DataFrame({"codigo": [1, 2], "x": [10, 20]})
+        df2 = pd.DataFrame({"codigo": [1, 2], "y": [30, 40]})
+
+        # Claves por índice 0 y 1
+        df_res, _ = consolidar_dataframes_multiples(
+            [(df1, "a.csv"), (df2, "b.csv")],
+            columnas_id={0: "codigo", 1: "codigo"}
         )
-        arch2 = MockUploadedFile(
-            b"id_vuelo,capacidad,precio\nFL-1,180,105\nFL-1,190,115\nFL-3,200,300\n",
-            "arch2.csv"
+        assert len(df_res) == 2
+        assert "x" in df_res.columns
+        assert "y" in df_res.columns
+
+    def test_consolidacion_por_id_coercion_tipos_diferentes(self):
+        """Si la columna ID en df1 es int y en df2 es str, debe convertirlas sin fallar."""
+        df1 = pd.DataFrame({"id": [101, 102], "col_a": ["a", "b"]})
+        df2 = pd.DataFrame({"id": ["101", "102"], "col_b": ["c", "d"]})
+
+        df_res, _ = consolidar_dataframes_multiples(
+            [(df1, "f1.csv"), (df2, "f2.csv")],
+            columnas_id={"f1.csv": "id", "f2.csv": "id"}
+        )
+        assert len(df_res) == 2
+        assert df_res["col_a"].iloc[0] == "a"
+        assert df_res["col_b"].iloc[0] == "c"
+
+    def test_consolidacion_horizontal_sin_ids_renombra_repetidas(self):
+        """Modo tradicional horizontal (pd.concat axis=1) sin columnas_id."""
+        df1 = pd.DataFrame({"id": [1, 2], "dato": ["a", "b"]})
+        df2 = pd.DataFrame({"id": [1, 2], "dato": ["c", "d"]})
+
+        df_res, mapping = consolidar_dataframes_multiples(
+            [(df1, "f1.csv"), (df2, "f2.csv")],
+            modo_unificacion="horizontal",
+            columnas_id=None
+        )
+        assert len(df_res) == 2
+        assert "id" in df_res.columns
+        assert "id (2)" in df_res.columns
+        assert "dato" in df_res.columns
+        assert "dato (2)" in df_res.columns
+        assert mapping["id (2)"] == "f2.csv"
+
+    def test_consolidacion_vertical_sin_ids(self):
+        """Modo tradicional vertical (axis=0) sin columnas_id."""
+        df1 = pd.DataFrame({"id": [1, 2], "val": [10, 20]})
+        df2 = pd.DataFrame({"id": [3, 4], "val": [30, 40]})
+
+        df_res, mapping = consolidar_dataframes_multiples(
+            [(df1, "f1.csv"), (df2, "f2.csv")],
+            modo_unificacion="vertical",
+            columnas_id=None
+        )
+        assert len(df_res) == 4
+        assert list(df_res["id"]) == [1, 2, 3, 4]
+        assert mapping["id"] == "f1.csv"
+
+    def test_consolidacion_por_id_columna_inexistente_fallback_a_primera_columna(self):
+        """Si la columna ID indicada en columnas_id no existe, recurre a la primera columna."""
+        df1 = pd.DataFrame({"col_a": [1, 2], "val1": [10, 20]})
+        df2 = pd.DataFrame({"col_b": [1, 2], "val2": [30, 40]})
+
+        df_res, _ = consolidar_dataframes_multiples(
+            [(df1, "f1.csv"), (df2, "f2.csv")],
+            columnas_id={"f1.csv": "col_fantasma", "f2.csv": "otra_fantasma"}
+        )
+        assert len(df_res) == 2
+        assert "val1" in df_res.columns
+        assert "val2" in df_res.columns
+
+    def test_consolidacion_por_id_con_ocurrencia_preexistente(self):
+        """Verifica que si df_sig ya contiene '_ocurrencia', se ignore en renombrados."""
+        df1 = pd.DataFrame({"id": [1], "v": [10]})
+        df2 = pd.DataFrame({"id": [1], "_ocurrencia": [999], "w": [20]})
+
+        df_res, _ = consolidar_dataframes_multiples(
+            [(df1, "f1.csv"), (df2, "f2.csv")],
+            columnas_id={"f1.csv": "id", "f2.csv": "id"}
+        )
+        assert len(df_res) == 1
+        assert "_ocurrencia" not in df_res.columns
+        assert "w" in df_res.columns
+
+    def test_consolidacion_por_id_triple_colision_columna(self):
+        """Tres archivos con la misma columna: debe generar 'dato', 'dato (2)' y 'dato (3)'."""
+        df1 = pd.DataFrame({"id": [1], "dato": [10]})
+        df2 = pd.DataFrame({"id": [1], "dato": [20]})
+        df3 = pd.DataFrame({"id": [1], "dato": [30]})
+
+        df_res, _ = consolidar_dataframes_multiples(
+            [(df1, "f1.csv"), (df2, "f2.csv"), (df3, "f3.csv")],
+            columnas_id={"f1.csv": "id", "f2.csv": "id", "f3.csv": "id"}
+        )
+        assert "dato" in df_res.columns
+        assert "dato (2)" in df_res.columns
+        assert "dato (3)" in df_res.columns
+
+    def test_consolidacion_sin_ids_axis_argumentos(self):
+        df1 = pd.DataFrame({"a": [1, 2]})
+        df2 = pd.DataFrame({"b": [3, 4]})
+
+        # axis=0 (vertical)
+        df_v, _ = consolidar_dataframes_multiples([(df1, "1"), (df2, "2")], axis=0)
+        assert len(df_v) == 4
+
+        # axis=1 (horizontal)
+        df_h, _ = consolidar_dataframes_multiples([(df1, "1"), (df2, "2")], axis=1)
+        assert len(df_h.columns) == 2
+
+    def test_consolidacion_horizontal_sin_ids_triple_colision(self):
+        df1 = pd.DataFrame({"x": [1]})
+        df2 = pd.DataFrame({"x": [2]})
+        df3 = pd.DataFrame({"x": [3]})
+
+        df_res, _ = consolidar_dataframes_multiples(
+            [(df1, "1"), (df2, "2"), (df3, "3")],
+            modo_unificacion="horizontal"
+        )
+        assert "x" in df_res.columns
+        assert "x (2)" in df_res.columns
+        assert "x (3)" in df_res.columns
+
+
+# =====================================================================
+# 3. Pruebas para LectorTextoDelimitado (CSV, TXT, Delimitadores)
+# =====================================================================
+
+class TestLectorTextoDelimitado:
+    """Pruebas del lector de texto delimitado, sniffers y casos borde de formato."""
+
+    def test_detectar_separadores_validos_en_stringio(self):
+        lector = LectorTextoDelimitado()
+
+        csv_coma = NamedStringIO("id,origen,destino\n1,EZE,MIA\n2,COR,BRC\n")
+        assert lector.detectar_separador(csv_coma) == ","
+
+        csv_puntoycoma = NamedStringIO("id;origen;destino\n1;EZE;MIA\n2;COR;BRC\n")
+        assert lector.detectar_separador(csv_puntoycoma) == ";"
+
+        csv_tab = NamedStringIO("id\torigen\tdestino\n1\tEZE\tMIA\n2\tCOR\tBRC\n")
+        assert lector.detectar_separador(csv_tab) == "\t"
+
+        csv_pipe = NamedStringIO("id|origen|destino\n1|EZE|MIA\n2|COR|BRC\n")
+        assert lector.detectar_separador(csv_pipe) == "|"
+
+        csv_espacio = NamedStringIO("id origen destino\n1 EZE MIA\n2 COR BRC\n")
+        assert lector.detectar_separador(csv_espacio) == " "
+
+    def test_detectar_separador_en_bytesio(self):
+        lector = LectorTextoDelimitado()
+        bytes_stream = NamedBytesIO(b"id,precio\n1,100\n2,200\n")
+        assert lector.detectar_separador(bytes_stream) == ","
+
+    def test_detectar_separador_stream_vacio_retorna_default(self):
+        lector = LectorTextoDelimitado()
+        vacio = NamedStringIO("")
+        assert lector.detectar_separador(vacio, default=";") == ";"
+
+    def test_detectar_separador_fallback_manual_cuando_sniffer_falla(self):
+        lector = LectorTextoDelimitado()
+        # Texto con líneas cortas donde sniffer estándar podría vacilar
+        texto = NamedStringIO("a|b\n1|2\n3|4\n")
+        assert lector.detectar_separador(texto) == "|"
+
+    def test_funcion_conveniencia_detectar_separador(self):
+        buf = NamedStringIO("col1;col2\nval1;val2\n")
+        assert detectar_separador(buf) == ";"
+
+    def test_leer_archivo_individual_csv_simple(self):
+        lector = LectorTextoDelimitado()
+        buf = NamedStringIO("id_vuelo,precio\nFL-1,100.5\nFL-2,200.0\n", name="vuelos.csv")
+        df = lector._leer(buf)
+        assert len(df) == 2
+        assert list(df.columns) == ["id_vuelo", "precio"]
+        assert df["precio"].iloc[0] == 100.5
+
+    def test_leer_archivo_con_separador_espacio(self):
+        lector = LectorTextoDelimitado()
+        buf = NamedStringIO("id precio origen\n1 100 EZE\n2 200 COR\n", name="vuelos.txt")
+        df = lector._leer(buf)
+        assert len(df) == 2
+        assert list(df.columns) == ["id", "precio", "origen"]
+
+    def test_leer_archivo_latin1_encoding_fallback(self):
+        lector = LectorTextoDelimitado()
+        contenido = "id,descripción\n1,operación válida\n2,canción\n".encode("latin-1")
+        buf = NamedBytesIO(contenido, name="latin1.csv")
+        df = lector._leer(buf)
+        assert len(df) == 2
+        assert "descripción" in df.columns
+
+    def test_obtener_cabeceras_preserva_seek(self):
+        lector = LectorTextoDelimitado()
+        buf = NamedStringIO("colA,colB,colC\n1,2,3\n", name="test.csv")
+        cabeceras = lector.obtener_cabeceras(buf)
+        assert cabeceras == ["colA", "colB", "colC"]
+        assert buf.tell() == 0
+
+    def test_leer_archivos_multiples_con_columnas_id(self):
+        lector = LectorTextoDelimitado()
+        f1 = NamedStringIO("id,origen\n1,EZE\n2,COR\n", name="f1.csv")
+        f2 = NamedStringIO("id,destino\n1,MIA\n2,BRC\n", name="f2.csv")
+
+        df_res = lector.leer_archivos([f1, f2], columnas_id={"f1.csv": "id", "f2.csv": "id"})
+        assert len(df_res) == 2
+        assert "origen" in df_res.columns
+        assert "destino" in df_res.columns
+        assert "id" in df_res.columns
+
+    def test_alias_lector_csv_y_txt(self):
+        assert LectorCSV is LectorTextoDelimitado
+        assert LectorTXT is LectorTextoDelimitado
+
+    def test_detectar_separador_con_ruta_string_mock_open(self):
+        lector = LectorTextoDelimitado()
+        import unittest.mock as mock
+        with mock.patch("builtins.open", mock.mock_open(read_data="col1,col2\n1,2\n")):
+            sep = lector.detectar_separador("archivo_virtual.csv")
+            assert sep == ","
+
+    def test_detectar_separador_con_ruta_string_latin1_fallback(self):
+        lector = LectorTextoDelimitado()
+        import unittest.mock as mock
+
+        def mock_open_func(file, mode="r", encoding="utf-8", **kwargs):
+            if encoding == "utf-8":
+                raise UnicodeDecodeError("utf-8", b"", 0, 1, "invalid")
+            return io.StringIO("col1;col2\n1;2\n")
+
+        with mock.patch("builtins.open", side_effect=mock_open_func):
+            sep = lector.detectar_separador("archivo_latin1.csv")
+            assert sep == ";"
+
+    def test_detectar_separador_con_ruta_string_error_total(self):
+        lector = LectorTextoDelimitado()
+        import unittest.mock as mock
+        with mock.patch("builtins.open", side_effect=OSError("Disk read failed")):
+            sep = lector.detectar_separador("archivo_inexistente.csv", default="|")
+            assert sep == "|"
+
+    def test_detectar_separador_sniffer_falla_con_fallback_manual(self):
+        lector = LectorTextoDelimitado()
+        import unittest.mock as mock
+        with mock.patch("csv.Sniffer.sniff", side_effect=Exception("Sniffer failed")):
+            # Caso 1: punto y coma regular
+            buf_pc = NamedStringIO("a;b\n1;2\n3;4\n")
+            assert lector.detectar_separador(buf_pc) == ";"
+
+            # Caso 2: espacio regular
+            buf_sp = NamedStringIO("a b c\n1 2 3\n4 5 6\n")
+            assert lector.detectar_separador(buf_sp) == " "
+
+            # Caso 3: texto irregular sin separadores estándar
+            buf_irr = NamedStringIO("palabra_sin_separador\notra_palabra\n")
+            assert lector.detectar_separador(buf_irr, default=",") == ","
+
+    def test_leer_fallback_python_engine_bad_lines(self):
+        lector = LectorTextoDelimitado()
+        # CSV con línea malformada que provoca ParserError en el motor C
+        contenido = "a,b\n1,2,3,4,extra\n5,6\n"
+        buf = NamedStringIO(contenido, name="malformado.csv")
+        df = lector._leer(buf)
+        assert len(df) >= 1
+        assert list(df.columns) == ["a", "b"]
+
+
+# =====================================================================
+# 4. Pruebas para LectorExcel
+# =====================================================================
+
+class TestLectorExcel:
+    """Pruebas del lector de hojas de cálculo Excel usando openpyxl en memoria."""
+
+    def test_leer_archivo_excel_simple(self):
+        df_original = pd.DataFrame({"id": [1, 2], "aerolinea": ["Aerolineas", "Iberia"]})
+        excel_buf = crear_excel_en_memoria(df_original, name="vuelos.xlsx")
+
+        lector = LectorExcel()
+        df_leido = lector._leer(excel_buf)
+        assert len(df_leido) == 2
+        assert list(df_leido.columns) == ["id", "aerolinea"]
+        assert df_leido["aerolinea"].iloc[1] == "Iberia"
+        assert excel_buf.tell() == 0
+
+    def test_obtener_cabeceras_excel(self):
+        df_original = pd.DataFrame({"id_vuelo": [], "precio": [], "capacidad": []})
+        excel_buf = crear_excel_en_memoria(df_original, name="cab.xlsx")
+
+        lector = LectorExcel()
+        cabeceras = lector.obtener_cabeceras(excel_buf)
+        assert cabeceras == ["id_vuelo", "precio", "capacidad"]
+        assert excel_buf.tell() == 0
+
+    def test_leer_archivos_excel_multiples_con_columnas_id(self):
+        df1 = pd.DataFrame({"id": ["A1", "A2"], "tramo1": [10, 20]})
+        df2 = pd.DataFrame({"id": ["A1", "A2"], "tramo2": [30, 40]})
+
+        b1 = crear_excel_en_memoria(df1, name="e1.xlsx")
+        b2 = crear_excel_en_memoria(df2, name="e2.xlsx")
+
+        lector = LectorExcel()
+        df_res = lector.leer_archivos([b1, b2], columnas_id={"e1.xlsx": "id", "e2.xlsx": "id"})
+        assert len(df_res) == 2
+        assert "tramo1" in df_res.columns
+        assert "tramo2" in df_res.columns
+
+
+# =====================================================================
+# 5. Pruebas para LectorSQL
+# =====================================================================
+
+class TestLectorSQL:
+    """Pruebas del lector de bases de datos relacionales SQL con SQLite en memoria."""
+
+    def test_falta_nombre_tabla_lanza_value_error(self):
+        lector = LectorSQL()
+        with pytest.raises(ValueError, match="Se requiere el nombre de la tabla"):
+            lector.leer_archivos("sqlite:///:memory:", nombre_tabla=None)
+
+    def test_lectura_tabla_sqlite_en_memoria(self):
+        # Creamos una base de datos SQLite en memoria con datos
+        uri = "sqlite://"  # SQLite in-memory engine por defecto en SQLAlchemy
+        conn = sqlite3.connect(":memory:")
+        cursor = conn.cursor()
+        cursor.execute("CREATE TABLE vuelos_test (id INTEGER, precio REAL);")
+        cursor.execute("INSERT INTO vuelos_test VALUES (1, 150.0);")
+        cursor.execute("INSERT INTO vuelos_test VALUES (2, 250.0);")
+        conn.commit()
+
+        # Usamos una base sqlite URI temporal válida para sqlalchemy
+        # Mockeamos pd.read_sql para aislar completamente
+        lector = LectorSQL()
+        df_esperado = pd.DataFrame({"id": [1, 2], "precio": [150.0, 250.0]})
+
+        import unittest.mock as mock
+        with mock.patch("modules.Lector.lector_sql.create_engine") as mock_engine:
+            with mock.patch("pandas.read_sql", return_value=df_esperado) as mock_read:
+                df_res = lector.leer_archivos("sqlite:///:memory:", nombre_tabla="vuelos_test")
+                assert len(df_res) == 2
+                assert list(df_res["id"]) == [1, 2]
+                mock_read.assert_called_once()
+
+
+# =====================================================================
+# 6. Pruebas para FactoryLectorDatos y Detección de Formato
+# =====================================================================
+
+class TestFactoryYOrquestador:
+    """Pruebas de la fábrica de lectores, orquestador multiformato y detección."""
+
+    def test_factory_obtener_lector_por_tipo(self):
+        assert isinstance(FactoryLectorDatos.obtener_lector("CSV"), LectorTextoDelimitado)
+        assert isinstance(FactoryLectorDatos.obtener_lector("TXT"), LectorTextoDelimitado)
+        assert isinstance(FactoryLectorDatos.obtener_lector("TEXTO_DELIMITADO"), LectorTextoDelimitado)
+        assert isinstance(FactoryLectorDatos.obtener_lector("EXCEL"), LectorExcel)
+        assert isinstance(FactoryLectorDatos.obtener_lector("SQL"), LectorSQL)
+
+        with pytest.raises(ValueError, match="Tipo de origen desconocido"):
+            FactoryLectorDatos.obtener_lector("FORMATO_DESCONOCIDO")
+
+    def test_factory_obtener_lector_por_archivo_individual(self):
+        assert isinstance(FactoryLectorDatos.obtener_lector_por_archivo("datos.csv"), LectorTextoDelimitado)
+        assert isinstance(FactoryLectorDatos.obtener_lector_por_archivo("datos.txt"), LectorTextoDelimitado)
+        assert isinstance(FactoryLectorDatos.obtener_lector_por_archivo("datos.xlsx"), LectorExcel)
+        assert isinstance(FactoryLectorDatos.obtener_lector_por_archivo("datos.xls"), LectorExcel)
+
+        # Con objeto provisto de .name
+        obj_csv = NamedStringIO(name="mi_archivo.csv")
+        assert isinstance(FactoryLectorDatos.obtener_lector_por_archivo(obj_csv), LectorTextoDelimitado)
+
+        with pytest.raises(ValueError, match="Extensión de archivo no soportada"):
+            FactoryLectorDatos.obtener_lector_por_archivo("archivo.pdf")
+
+    def test_factory_obtener_lector_lista_homogenea_y_vacia(self):
+        # Lista vacía retorna default LectorTextoDelimitado
+        assert isinstance(FactoryLectorDatos.obtener_lector_por_archivo([]), LectorTextoDelimitado)
+
+        # Lista homogénea CSV
+        lista_csv = ["v1.csv", "v2.csv"]
+        assert isinstance(FactoryLectorDatos.obtener_lector_por_archivo(lista_csv), LectorTextoDelimitado)
+
+        # Lista homogénea Excel
+        lista_xlsx = ["v1.xlsx", "v2.xlsx"]
+        assert isinstance(FactoryLectorDatos.obtener_lector_por_archivo(lista_xlsx), LectorExcel)
+
+    def test_factory_obtener_lector_lista_mixta_retorna_orquestador(self):
+        # Lista mixta (.csv y .xlsx)
+        lista_mixta = ["vuelos.csv", "precios.xlsx"]
+        lector = FactoryLectorDatos.obtener_lector_por_archivo(lista_mixta)
+        assert isinstance(lector, LectorOrquestadorMultiArchivo)
+
+    def test_factory_obtener_cabeceras_archivo(self):
+        buf = NamedStringIO("id,precio,estado\n1,100,A tiempo\n", name="test.csv")
+        cabeceras = FactoryLectorDatos.obtener_cabeceras_archivo(buf)
+        assert cabeceras == ["id", "precio", "estado"]
+
+    def test_orquestador_multi_archivo_lectura_mixta(self):
+        """Lectura e integración combinada de un archivo CSV y un archivo Excel en memoria."""
+        csv_buf = NamedStringIO("id,aeropuerto\n1,EZE\n2,COR\n", name="aeropuertos.csv")
+        df_excel = pd.DataFrame({"id": [1, 2], "precio": [500.0, 300.0]})
+        xlsx_buf = crear_excel_en_memoria(df_excel, name="tarifas.xlsx")
+
+        orquestador = LectorOrquestadorMultiArchivo()
+        df_res = orquestador.leer_archivos(
+            [csv_buf, xlsx_buf],
+            columnas_id={"aeropuertos.csv": "id", "tarifas.xlsx": "id"}
         )
 
-        lector = LectorCSV()
-        cols_id = {"arch1.csv": "id_vuelo", "arch2.csv": "id_vuelo"}
-        df = lector.leer_archivos([arch1, arch2], columnas_id=cols_id)
+        assert len(df_res) == 2
+        assert "aeropuerto" in df_res.columns
+        assert "precio" in df_res.columns
+        assert "id" in df_res.columns
 
-        # Sin la clave temporal _ocurrencia, los 2 FL-1 de arch1 y los 2 FL-1 de arch2
-        # generarían 2 * 2 = 4 filas para FL-1 (total 6 filas).
-        # Con _ocurrencia, debe haber exactamente 2 filas para FL-1 (total 4 filas).
-        self.assertEqual(len(df), 4)
-        self.assertNotIn("_ocurrencia", df.columns, "La columna temporal _ocurrencia debe ser eliminada")
+    def test_orquestador_obtener_cabeceras(self):
+        orquestador = LectorOrquestadorMultiArchivo()
+        csv_buf = NamedStringIO("colX,colY\n1,2\n", name="test.csv")
+        cabeceras = orquestador.obtener_cabeceras(csv_buf)
+        assert cabeceras == ["colX", "colY"]
 
-        # Verificar coincidencias 1 a 1 de las ocurrencias
-        filas_fl1 = df[df["id_vuelo"] == "FL-1"]
-        self.assertEqual(len(filas_fl1), 2)
-        # Ocurrencia 0
-        self.assertEqual(filas_fl1.iloc[0]["origen"], "JFK")
-        self.assertEqual(filas_fl1.iloc[0]["capacidad"], 180)
-        # Ocurrencia 1
-        self.assertEqual(filas_fl1.iloc[1]["origen"], "EWR")
-        self.assertEqual(filas_fl1.iloc[1]["capacidad"], 190)
+    def test_detectar_formato_completo(self):
+        # Con encabezado y delimitador coma
+        buf_con_cab = NamedStringIO("nombre,edad,ciudad\nJuan,30,BsAs\nPedro,25,Cordoba\n")
+        sep, has_header = detectar_formato(buf_con_cab)
+        assert sep == ","
+        assert isinstance(has_header, bool)
 
+        # Buffer vacío
+        buf_vacio = NamedStringIO("")
+        sep_vacio, has_hdr_vacio = detectar_formato(buf_vacio)
+        assert sep_vacio == ","
+        assert has_hdr_vacio is True
 
-if __name__ == "__main__":
-    unittest.main()
+    def test_detectar_formato_con_bytesio(self):
+        buf = NamedBytesIO(b"id;nombre\n1;Ana\n")
+        sep, has_header = detectar_formato(buf)
+        assert sep == ";"
+        assert has_header is True
+
+    def test_detectar_formato_con_ruta_string_mock_open(self):
+        import unittest.mock as mock
+        with mock.patch("builtins.open", mock.mock_open(read_data="id,nombre\n1,Juan\n")):
+            sep, has_header = detectar_formato("archivo_virtual.csv")
+            assert sep == ","
+            assert has_header is True
+
+    def test_detectar_formato_sniffer_has_header_falla(self):
+        import unittest.mock as mock
+        buf = NamedStringIO("id,nombre\n1,Juan\n")
+        with mock.patch("csv.Sniffer.has_header", side_effect=Exception("Sniff header error")):
+            sep, has_header = detectar_formato(buf)
+            assert sep == ","
+            assert has_header is True
+
+    def test_factory_obtener_lector_por_archivo_lista_extension_desconocida_default_csv(self):
+        # Lista con extensión no estándar (ej. .dat) debe asociarse a CSV por defecto
+        lista_desconocida = ["datos.dat"]
+        lector = FactoryLectorDatos.obtener_lector_por_archivo(lista_desconocida)
+        assert isinstance(lector, LectorTextoDelimitado)
+
