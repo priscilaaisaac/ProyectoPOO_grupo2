@@ -200,9 +200,15 @@ def modulo_validacion():
             prefix="single_"
         )
 
-    st.markdown('<h3 style="font-size: 1.4rem;">Guardar y Continuar</h3>', unsafe_allow_html=True)
-    # Nombre para el nuevo archivo
-    nombre_archivo_nuevo = st.text_input("Nombre para el nuevo archivo unificado:", "dataset_vuelos_unificado")
+    archivos_crudos = st.session_state.get("archivos_crudos_temporales", [])
+    total_archivos = len(archivos_crudos) if archivos_crudos else len(archivos_dfs)
+
+    if total_archivos >= 2:
+        st.markdown('<h3 style="font-size: 1.4rem;">Guardar Archivo Unificado y Continuar</h3>', unsafe_allow_html=True)
+        nombre_archivo_nuevo = st.text_input("Nombre para el nuevo archivo unificado:", "dataset_unificado")
+    else:
+        st.markdown('<h3 style="font-size: 1.4rem;">Continuar a Limpieza</h3>', unsafe_allow_html=True)
+        nombre_archivo_nuevo = ""
 
     if st.button("Validar Contrato y Continuar"):
         # REGLA 1: RESTRICCIÓN ABSOLUTA DE "(No asignar)" CON VALIDACIÓN INMEDIATA
@@ -239,8 +245,8 @@ def modulo_validacion():
             directorio_guardado = GestorUsuarios.obtener_directorio_archivos(username)
 
             # Guardar archivos crudos originales
-            if "archivos_crudos_temporales" in st.session_state:
-                for archivo in st.session_state.archivos_crudos_temporales:
+            if archivos_crudos:
+                for archivo in archivos_crudos:
                     ruta_crudo = os.path.join(directorio_guardado, f"raw_{archivo.name}")
                     with open(ruta_crudo, "wb") as f:
                         f.write(archivo.getvalue())
@@ -280,9 +286,34 @@ def modulo_validacion():
                     f"Continuando con {len(df_unificado)} registro(s) hacia el pipeline de limpieza."
                 )
 
-            ruta_unificado = os.path.join(directorio_guardado, f"{nombre_archivo_nuevo}.csv")
-            df_unificado.to_csv(ruta_unificado, index=False)
-            st.session_state.nombre_archivo_actual = f"{nombre_archivo_nuevo}.csv"
+            if total_archivos >= 2:
+                # Regla: Si se procesan 2 o más archivos, se guarda como archivo 'Unificado' ANTES de la limpieza
+                nombre_guardar = nombre_archivo_nuevo.strip() if nombre_archivo_nuevo.strip() else "dataset_unificado"
+                if not nombre_guardar.endswith(".csv"):
+                    nombre_guardar = f"{nombre_guardar}.csv"
+                ruta_unificado = os.path.join(directorio_guardado, nombre_guardar)
+                df_unificado.to_csv(ruta_unificado, index=False)
+                st.session_state.nombre_archivo_actual = nombre_guardar
+                mensaje_exito = (
+                    f"✅ ¡Contrato validado exitosamente! Se unificaron {total_archivos} archivo(s) "
+                    f"y se guardó '{nombre_guardar}' en Archivos Unificados."
+                )
+            else:
+                # Regla: Si se procesa un solo archivo, NO debe existir ni registrarse un archivo 'Unificado'.
+                # Pasa directamente a limpieza.
+                if archivos_crudos:
+                    nombre_orig = archivos_crudos[0].name
+                else:
+                    nombre_orig = list(archivos_dfs.keys())[0] if archivos_dfs else "dataset_vuelos.csv"
+
+                if nombre_orig.endswith((".xlsx", ".xltx", ".xltm", ".txt")):
+                    nombre_orig = os.path.splitext(nombre_orig)[0] + ".csv"
+
+                st.session_state.nombre_archivo_actual = nombre_orig
+                mensaje_exito = (
+                    f"✅ ¡Contrato validado exitosamente para '{nombre_orig}'! "
+                    f"Avanzando directamente al pipeline de limpieza."
+                )
 
             st.session_state.df_crudo = df_unificado
             nuevo_mapeo = {col: col for col in COLUMNAS_CANONICAS}
@@ -290,10 +321,7 @@ def modulo_validacion():
             st.session_state.contrato_validado = True
             st.session_state.df_estandarizado = EstandarizadorDatos.normalizar(df_unificado)
 
-            st.success(
-                f"✅ ¡Contrato validado exitosamente! Se unificaron {len(dfs_canonicos)} archivo(s) "
-                f"bajo las 13 columnas canónicas limpias. Guardado en '{nombre_archivo_nuevo}.csv'."
-            )
+            st.success(mensaje_exito)
         except ValueError as ve:
             st.session_state.contrato_validado = False
             st.error(f"Error de Contrato: {ve}")

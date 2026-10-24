@@ -197,6 +197,22 @@ class TestGeneradorDOCX:
         assert isinstance(contenido_bytes, bytes)
         assert contenido_bytes.startswith(b"PK\x03\x04")
 
+    def test_generar_docx_con_buffer_grafico_en_memoria(self):
+        """Verifica que GeneradorDOCX procese correctamente buffers de gráficos en memoria (seek(0) y add_picture)."""
+        from PIL import Image
+        img = Image.new("RGB", (100, 100), color="blue")
+        buf = io.BytesIO()
+        img.save(buf, format="PNG")
+        buf.seek(50)  # Dejar el cursor desfasado deliberadamente para verificar buffer.seek(0)
+
+        graficos = [
+            {"titulo": "Gráfico Buffer", "buffer": buf, "descripcion": "Detalle buffer"}
+        ]
+        generador = GeneradorDOCX(graficos=graficos)
+        contenido = generador.generar_archivo()
+        assert isinstance(contenido, bytes)
+        assert contenido.startswith(b"PK\x03\x04")
+
     def test_generar_docx_sin_modulo_docx_lanza_error(self):
         generador = GeneradorDOCX()
         with mock.patch("modules.Generador_Archivo.generador_docx.docx", None):

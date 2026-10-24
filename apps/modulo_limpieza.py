@@ -403,7 +403,12 @@ def modulo_limpieza_y_dominio(gestor_usr):
             nombre_base = st.session_state.get("nombre_archivo_actual", "dataset_vuelos.csv")
             if nombre_base.endswith(".csv"):
                 nombre_base = nombre_base[:-4]
-            nombre_limpio = f"{nombre_base}_limpio.csv"
+            if nombre_base.startswith("raw_"):
+                nombre_base = nombre_base[4:]
+            if not nombre_base.endswith("_limpio"):
+                nombre_limpio = f"{nombre_base}_limpio.csv"
+            else:
+                nombre_limpio = f"{nombre_base}.csv"
             
             directorio_guardado = gestor_usr.obtener_directorio_archivos(usuario.username)
             ruta_limpio = os.path.join(directorio_guardado, nombre_limpio)
@@ -445,7 +450,12 @@ def modulo_limpieza_y_dominio(gestor_usr):
         nombre_base = st.session_state.get("nombre_archivo_actual", "dataset_vuelos.csv")
         if nombre_base.endswith(".csv"):
             nombre_base = nombre_base[:-4]
-        nombre_limpio_descarga = f"{nombre_base}_limpio.csv"
+        if nombre_base.startswith("raw_"):
+            nombre_base = nombre_base[4:]
+        if not nombre_base.endswith("_limpio"):
+            nombre_limpio_descarga = f"{nombre_base}_limpio.csv"
+        else:
+            nombre_limpio_descarga = f"{nombre_base}.csv"
 
         st.download_button(
             label="⬇️ Descargar Dataset Limpio (CSV)",

@@ -112,7 +112,7 @@ def vista_perfil_pantalla_completa(gestor_usr):
             st.session_state.mostrar_perfil = False
             st.rerun()
 
-    st.write("En esta sección podés visualizar tus archivos cargados (crudos) y los archivos que has creado (unificados)")
+    st.write("En esta sección podés visualizar tus archivos cargados (crudos), archivos resultantes de uniones (unificados) y archivos procesados (limpios).")
     st.divider()
 
     # AISLAMIENTO: Se obtienen únicamente los archivos del usuario autenticado
@@ -125,19 +125,25 @@ def vista_perfil_pantalla_completa(gestor_usr):
         
     if archivos:
         crudos = [f for f in archivos if f.startswith("raw_")]
-        creados = [f for f in archivos if not f.startswith("raw_")]
+        limpios = [f for f in archivos if f.endswith("_limpio.csv") or "_limpio." in f]
+        unificados = [
+            f for f in archivos 
+            if not f.startswith("raw_") and not (f.endswith("_limpio.csv") or "_limpio." in f)
+        ]
 
-        # SECCIÓN DE ARCHIVOS CARGADOS CRUDOS
-        col1, col2 = st.columns(2)
+        # SECCIÓN EN 3 CATEGORÍAS INDEPENDIENTES
+        col1, col2, col3 = st.columns(3)
+
+        # 1. ARCHIVOS CARGADOS (CRUDOS)
         with col1:
             st.markdown("### Archivos Cargados (Crudos)")
             if not crudos:
-                st.write("No hay archivos cargados.")
+                st.caption("No hay archivos cargados.")
             for f in crudos:
                 ruta = os.path.join(directorio_guardado, f)
                 c_btn, c_del = st.columns([0.82, 0.18])
                 with c_btn:
-                    if st.button(f"📥 {f}", key=f"btn_{f}", use_container_width=True):
+                    if st.button(f"📥 {f}", key=f"btn_raw_{f}", use_container_width=True):
                         try:
                             st.session_state.nombre_archivo_actual = f
                             df_cargado = pd.read_csv(ruta)
@@ -166,19 +172,71 @@ def vista_perfil_pantalla_completa(gestor_usr):
                     if st.button("🗑️", key=f"del_raw_{f}", help=f"Eliminar archivo {f}", use_container_width=True):
                         if os.path.exists(ruta):
                             os.remove(ruta)
+                        if st.session_state.get("nombre_archivo_actual") == f:
+                            st.session_state.df_crudo = None
+                            st.session_state.df_limpio = None
+                            st.session_state.lista_vuelos = []
                         st.success(f"Archivo crudo '{f}' eliminado.")
                         st.rerun()
 
-        # SECCIÓN DE ARCHIVOS LIMPIOS
+        # 2. ARCHIVOS UNIFICADOS
         with col2:
-            st.markdown("### Archivos Creados (Unificados y Limpios)")
-            if not creados: # Si no hay archivos guardados, mostrar mensaje.
-                st.write("No hay archivos unificados.")
-            for f in creados: # para cada archivo
+            st.markdown("### Archivos Unificados")
+            if not unificados:
+                st.caption("No hay archivos unificados.")
+            for f in unificados:
                 ruta = os.path.join(directorio_guardado, f)
                 c_btn, c_del = st.columns([0.82, 0.18])
                 with c_btn:
-                    if st.button(f"📄 {f}", key=f"btn_{f}", use_container_width=True):
+                    if st.button(f"📑 {f}", key=f"btn_unif_{f}", use_container_width=True):
+                        try:
+                            st.session_state.nombre_archivo_actual = f
+                            df_cargado = pd.read_csv(ruta)
+                            st.session_state.df_crudo = df_cargado
+                            st.session_state.df_limpio = None
+                            st.session_state.pipeline_ejecutado_recientemente = False
+                            st.session_state.archivo_es_limpio = False
+                            st.session_state.lista_vuelos = []
+                            nuevo_mapeo = {}
+                            for attr in ATRIBUTOS_REQUERIDOS + ATRIBUTOS_OPCIONALES:
+                                if attr in df_cargado.columns:
+                                    nuevo_mapeo[attr] = attr
+                                else:
+                                    nuevo_mapeo[attr] = "(No asignar)"
+                            for col in df_cargado.columns:
+                                if col not in nuevo_mapeo:
+                                    nuevo_mapeo[col] = col
+                            st.session_state.mapeo_columnas = nuevo_mapeo
+                            st.session_state.contrato_validado = True
+                            st.session_state.df_estandarizado = EstandarizadorDatos.normalizar(df_cargado)
+                            st.session_state.mostrar_perfil = False
+                            st.session_state.modo_limpieza_directa = True
+                            st.session_state.mostrar_analisis = False
+                            st.session_state.mostrar_manual = False
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"Error al cargar el archivo unificado: {e}")
+                with c_del:
+                    if st.button("🗑️", key=f"del_unif_{f}", help=f"Eliminar archivo {f}", use_container_width=True):
+                        if os.path.exists(ruta):
+                            os.remove(ruta)
+                        if st.session_state.get("nombre_archivo_actual") == f:
+                            st.session_state.df_crudo = None
+                            st.session_state.df_limpio = None
+                            st.session_state.lista_vuelos = []
+                        st.success(f"Archivo unificado '{f}' eliminado.")
+                        st.rerun()
+
+        # 3. ARCHIVOS LIMPIOS
+        with col3:
+            st.markdown("### Archivos Limpios")
+            if not limpios:
+                st.caption("No hay archivos limpios.")
+            for f in limpios:
+                ruta = os.path.join(directorio_guardado, f)
+                c_btn, c_del = st.columns([0.82, 0.18])
+                with c_btn:
+                    if st.button(f"📄 {f}", key=f"btn_limp_{f}", use_container_width=True):
                         try:
                             st.session_state.nombre_archivo_actual = f
                             df_cargado = pd.read_csv(ruta)
@@ -225,9 +283,13 @@ def vista_perfil_pantalla_completa(gestor_usr):
                         except Exception as e:
                             st.error(f"Error al cargar el archivo limpio para visualización: {e}")
                 with c_del:
-                    if st.button("🗑️", key=f"del_creado_{f}", help=f"Eliminar archivo {f}", use_container_width=True):
+                    if st.button("🗑️", key=f"del_limp_{f}", help=f"Eliminar archivo {f}", use_container_width=True):
                         if os.path.exists(ruta):
                             os.remove(ruta)
+                        if st.session_state.get("nombre_archivo_actual") == f:
+                            st.session_state.df_crudo = None
+                            st.session_state.df_limpio = None
+                            st.session_state.lista_vuelos = []
                         st.success(f"Archivo limpio '{f}' eliminado.")
                         st.rerun()
 
